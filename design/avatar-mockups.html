@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>弹弹消消乐 · App 头像方案（3 版）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; padding: 32px 20px 56px;
+    background:
+      radial-gradient(1000px 520px at 82% -8%, rgba(139,76,240,.20), transparent 60%),
+      radial-gradient(820px 460px at 4% 104%, rgba(0,184,212,.14), transparent 60%),
+      #0B0D1F;
+    color: #E8EAF6; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.7;
+  }
+  header { max-width: 1080px; margin: 0 auto 28px; text-align: center; }
+  header h1 { font-size: 24px; font-weight: 800; letter-spacing: .5px; }
+  header h1 span { color: #FFD93D; }
+  header p { font-size: 13.5px; color: rgba(232,234,246,.62); margin-top: 8px; }
+  header .note {
+    display: inline-block; margin-top: 14px; padding: 7px 14px; border-radius: 20px;
+    background: rgba(255,217,61,.10); border: 1px solid rgba(255,217,61,.28);
+    color: #FFD93D; font-size: 12px;
+  }
+  .grid {
+    max-width: 1080px; margin: 0 auto; display: grid; gap: 22px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .card {
+    background: linear-gradient(180deg, rgba(44,36,84,.72), rgba(25,21,52,.72));
+    border: 1px solid rgba(255,255,255,.10); border-radius: 18px; padding: 18px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.4);
+  }
+  .card .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .6px;
+    padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+    background: rgba(143,160,255,.16); border: 1px solid rgba(143,160,255,.34); color: #AEB8FF;
+  }
+  .shot {
+    width: 100%; aspect-ratio: 1/1; border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.10); background: #0B0D1F;
+  }
+  .shot svg { display: block; width: 100%; height: 100%; }
+  .card h2 { font-size: 16px; margin: 14px 0 6px; }
+  .card .desc { font-size: 12.6px; color: rgba(232,234,246,.6); min-height: 54px; }
+  .card .btns { display: flex; gap: 10px; margin-top: 14px; }
+  button {
+    flex: 1; padding: 10px 8px; border-radius: 11px; font-size: 13px; font-weight: 700;
+    cursor: pointer; border: 1px solid transparent; transition: transform .12s, filter .12s;
+    font-family: inherit;
+  }
+  button:active { transform: translateY(1px); }
+  .dl { background: linear-gradient(135deg,#6C7BFF,#8B4CF0); color: #fff; box-shadow: 0 4px 16px rgba(108,123,255,.4); }
+  .dl:hover { filter: brightness(1.08); }
+  .mini { background: rgba(255,255,255,.07); color: rgba(232,234,246,.8); border-color: rgba(255,255,255,.14); flex: 0 0 92px; }
+  .mini:hover { background: rgba(255,255,255,.12); }
+  footer { max-width: 1080px; margin: 30px auto 0; text-align: center; font-size: 12.4px; color: rgba(232,234,246,.5); }
+  footer code { background: rgba(255,255,255,.08); padding: 2px 7px; border-radius: 6px; color: #7CF6FF; font-size: 11.6px; }
+  footer .steps { max-width: 620px; margin: 10px auto 0; text-align: left; line-height: 2; }
+</style>
+</head>
+<body>
+<header>
+  <h1>弹弹<span>消消乐</span> · App 头像方案</h1>
+  <p>基于项目「深夜台球厅」暗色霓虹基调与色板矢量绘制，默认导出微信小程序头像尺寸 144×144 PNG（矢量无损，也可导 1024）。三选一即可。</p>
+  <div class="note">当前 ImageGen 额度不足，故改用矢量方案生成，配色 100% 取自项目 PALETTE</div>
+</header>
+
+<main class="grid">
+
+  <!-- ============================ V1 ============================ -->
+  <section class="card">
+    <span class="tag">方案一 · 玩法核心</span>
+    <div class="shot">
+      <svg id="svgV1" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="a1bg" x1="0" y1="0" x2=".3" y2="1">
+            <stop offset="0" stop-color="#191C42"/><stop offset=".55" stop-color="#161338"/><stop offset="1" stop-color="#241548"/>
+          </linearGradient>
+          <radialGradient id="a1gp" cx=".7" cy=".22" r=".62">
+            <stop offset="0" stop-color="#8B4CF0" stop-opacity=".55"/><stop offset="1" stop-color="#8B4CF0" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="a1gc" cx=".24" cy=".7" r=".55">
+            <stop offset="0" stop-color="#2AD4FF" stop-opacity=".38"/><stop offset="1" stop-color="#2AD4FF" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="a1brick" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#A9B8FF"/><stop offset="1" stop-color="#5566DE"/>
+          </linearGradient>
+          <radialGradient id="a1ball" cx=".36" cy=".3" r=".8">
+            <stop offset="0" stop-color="#F2FFFF"/><stop offset=".3" stop-color="#8FF8FF"/>
+            <stop offset=".75" stop-color="#4FD8FF"/><stop offset="1" stop-color="#3E8BFF"/>
+          </radialGradient>
+          <linearGradient id="a1pad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#8FA0FF"/><stop offset="1" stop-color="#B980FF"/>
+          </linearGradient>
+          <g id="a1cell">
+            <rect width="58" height="58" rx="10" fill="url(#a1brick)"/>
+            <rect x="5" y="4" width="48" height="14" rx="7" fill="#FFFFFF" opacity=".26"/>
+            <rect width="58" height="58" rx="10" fill="none" stroke="#D6DEFF" stroke-opacity=".45" stroke-width="1.6"/>
+          </g>
+          <g id="a1star">
+            <path d="M0,-11 L2.9,-2.9 L11,0 L2.9,2.9 L0,11 L-2.9,2.9 L-11,0 L-2.9,-2.9 Z" fill="#FFD93D"/>
+          </g>
+        </defs>
+        <rect width="512" height="512" fill="url(#a1bg)"/>
+        <rect width="512" height="512" fill="url(#a1gp)"/>
+        <rect width="512" height="512" fill="url(#a1gc)"/>
+        <!-- 方块墙（铺满宽度 7×3，底部中列缺口 · 整体下移） -->
+        <g>
+          <use href="#a1cell" x="32" y="82"/><use href="#a1cell" x="97" y="82"/>
+          <use href="#a1cell" x="162" y="82"/><use href="#a1cell" x="227" y="82"/>
+          <use href="#a1cell" x="292" y="82"/><use href="#a1cell" x="357" y="82"/>
+          <use href="#a1cell" x="422" y="82"/>
+          <use href="#a1cell" x="32" y="147"/><use href="#a1cell" x="97" y="147"/>
+          <use href="#a1cell" x="162" y="147"/><use href="#a1cell" x="227" y="147"/>
+          <use href="#a1cell" x="292" y="147"/><use href="#a1cell" x="357" y="147"/>
+          <use href="#a1cell" x="422" y="147"/>
+          <use href="#a1cell" x="32" y="212"/><use href="#a1cell" x="97" y="212"/>
+          <use href="#a1cell" x="227" y="212"/><use href="#a1cell" x="292" y="212"/>
+          <use href="#a1cell" x="357" y="212"/><use href="#a1cell" x="422" y="212"/>
+        </g>
+        <!-- 碎裂块（底部中列缺口） -->
+        <g fill="url(#a1brick)">
+          <rect x="176" y="224" width="17" height="17" rx="4" transform="rotate(20 184 232)"/>
+          <rect x="200" y="242" width="13" height="13" rx="3" transform="rotate(-26 206 248)"/>
+          <rect x="166" y="248" width="11" height="11" rx="3" transform="rotate(38 171 253)"/>
+        </g>
+        <g stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" opacity=".85">
+          <path d="M192,220 l10,-8"/><path d="M198,236 l12,4"/><path d="M178,240 l-8,10"/>
+        </g>
+        <!-- 弹道预测点列（居中球 · 斜向左上缺口） -->
+        <g fill="#7CF6FF">
+          <circle cx="240" cy="338" r="6.5" opacity=".9"/>
+          <circle cx="230" cy="316" r="5.5" opacity=".72"/>
+          <circle cx="219" cy="295" r="4.5" opacity=".55"/>
+          <circle cx="209" cy="276" r="3.5" opacity=".4"/>
+        </g>
+        <!-- 发光弹球（居中 · 下移） -->
+        <circle cx="256" cy="368" r="72" fill="#4FD8FF" opacity=".10"/>
+        <circle cx="256" cy="368" r="50" fill="#4FD8FF" opacity=".16"/>
+        <circle cx="256" cy="368" r="30" fill="url(#a1ball)"/>
+        <ellipse cx="245" cy="356" rx="11" ry="7" fill="#FFFFFF" opacity=".8" transform="rotate(-30 245 356)"/>
+        <!-- 挡板横条（居中） -->
+        <rect x="158" y="452" width="196" height="22" rx="11" fill="url(#a1pad)"/>
+        <rect x="166" y="455" width="180" height="6" rx="3" fill="#FFFFFF" opacity=".45"/>
+        <!-- 星光点缀 -->
+        <use href="#a1star" transform="translate(432,296) scale(1.0)"/>
+        <use href="#a1star" transform="translate(86,300) scale(.8)"/>
+        <use href="#a1star" transform="translate(398,406) scale(.9)"/>
+        <use href="#a1star" transform="translate(94,428) scale(.68)" opacity=".85"/>
+      </svg>
+    </div>
+    <h2>弹球破阵</h2>
+    <p class="desc">直击玩法：天蓝方块墙铺满顶部，青色弹球拖着弹道预测点列向上撞碎方块，底部蓝紫挡板蓄势待接。信息量足、辨识度强，最像「消除弹射」游戏。</p>
+    <div class="btns">
+      <button class="dl" onclick="exportPNG('svgV1','tantan-avatar-144.png',144)">下载 PNG 144</button>
+      <button class="mini" onclick="exportPNG('svgV1','tantan-avatar-1024.png',1024)">1024</button>
+    </div>
+  </section>
+
+  <!-- ============================ V2 ============================ -->
+  <section class="card">
+    <span class="tag">方案二 · 霓虹主球</span>
+    <div class="shot">
+      <svg id="svgV2" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="a2bg" x1="0" y1="0" x2=".25" y2="1">
+            <stop offset="0" stop-color="#171A3E"/><stop offset=".5" stop-color="#151236"/><stop offset="1" stop-color="#251549"/>
+          </linearGradient>
+          <radialGradient id="a2glow" cx=".5" cy=".46" r=".5">
+            <stop offset="0" stop-color="#6FE9FF" stop-opacity=".5"/><stop offset=".6" stop-color="#8B4CF0" stop-opacity=".22"/><stop offset="1" stop-color="#8B4CF0" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="a2ball" cx=".36" cy=".3" r=".82">
+            <stop offset="0" stop-color="#EAFFFF"/><stop offset=".28" stop-color="#8FF8FF"/>
+            <stop offset=".72" stop-color="#7C9CFF"/><stop offset="1" stop-color="#8B4CF0"/>
+          </radialGradient>
+          <linearGradient id="a2brick" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#A9B8FF"/><stop offset="1" stop-color="#5566DE"/>
+          </linearGradient>
+          <g id="a2star">
+            <path d="M0,-11 L2.9,-2.9 L11,0 L2.9,2.9 L0,11 L-2.9,2.9 L-11,0 L-2.9,-2.9 Z" fill="#FFD93D"/>
+          </g>
+        </defs>
+        <rect width="512" height="512" fill="url(#a2bg)"/>
+        <rect width="512" height="512" fill="url(#a2glow)"/>
+        <!-- 散景霓虹光斑 -->
+        <g>
+          <circle cx="86" cy="92" r="30" fill="#8B4CF0" opacity=".18"/>
+          <circle cx="436" cy="120" r="22" fill="#7CF6FF" opacity=".16"/>
+          <circle cx="410" cy="410" r="34" fill="#8B4CF0" opacity=".14"/>
+          <circle cx="96" cy="404" r="20" fill="#7CF6FF" opacity=".14"/>
+        </g>
+        <!-- 环绕碎片方块 -->
+        <g fill="url(#a2brick)">
+          <rect x="72" y="150" width="34" height="34" rx="7" transform="rotate(-16 89 167)"/>
+          <rect x="404" y="176" width="28" height="28" rx="6" transform="rotate(20 418 190)"/>
+          <rect x="98" y="330" width="26" height="26" rx="6" transform="rotate(24 111 343)"/>
+          <rect x="392" y="316" width="32" height="32" rx="7" transform="rotate(-22 408 332)"/>
+        </g>
+        <!-- 主球光晕 -->
+        <circle cx="256" cy="248" r="168" fill="#4FD8FF" opacity=".08"/>
+        <circle cx="256" cy="248" r="140" fill="#7CF6FF" opacity=".12"/>
+        <!-- 主球 -->
+        <circle cx="256" cy="248" r="116" fill="url(#a2ball)"/>
+        <ellipse cx="212" cy="200" rx="34" ry="23" fill="#FFFFFF" opacity=".55" transform="rotate(-32 212 200)"/>
+        <circle cx="198" cy="188" r="10" fill="#FFFFFF" opacity=".9"/>
+        <path d="M170,300 A116,116 0 0 0 342,300" fill="none" stroke="#B980FF" stroke-width="8" opacity=".28"/>
+        <!-- 花色白圆 + 黄星（呼应台球 + 星级） -->
+        <circle cx="256" cy="230" r="47" fill="#FFFFFF" opacity=".94"/>
+        <path d="M256,204 L262.4,221.2 L280.7,222 L266.4,233.4 L271.3,251 L256,240.9 L240.7,251 L245.6,233.4 L231.3,222 L249.6,221.2 Z" fill="#FFD93D"/>
+        <!-- 星光 -->
+        <use href="#a2star" transform="translate(140,110) scale(1.0)"/>
+        <use href="#a2star" transform="translate(386,120) scale(.8)"/>
+        <use href="#a2star" transform="translate(120,392) scale(.85)"/>
+        <use href="#a2star" transform="translate(398,398) scale(1.05)"/>
+        <use href="#a2star" transform="translate(256,430) scale(.7)" opacity=".85"/>
+      </svg>
+    </div>
+    <h2>霓虹主球</h2>
+    <p class="desc">一颗青紫渐变的发光能量球居中当主角，白圈黄星呼应「台球 + 三星评价」，四周碎片飞散。聚焦、高级、缩到小尺寸依然醒目。</p>
+    <div class="btns">
+      <button class="dl" onclick="exportPNG('svgV2','tantan-avatar-144.png',144)">下载 PNG 144</button>
+      <button class="mini" onclick="exportPNG('svgV2','tantan-avatar-1024.png',1024)">1024</button>
+    </div>
+  </section>
+
+  <!-- ============================ V3 ============================ -->
+  <section class="card">
+    <span class="tag">方案三 · 萌宠吉祥物</span>
+    <div class="shot">
+      <svg id="svgV3" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="a3bg" x1="0" y1="0" x2=".2" y2="1">
+            <stop offset="0" stop-color="#1A1D45"/><stop offset=".55" stop-color="#171238"/><stop offset="1" stop-color="#26164A"/>
+          </linearGradient>
+          <radialGradient id="a3glow" cx=".5" cy=".4" r=".55">
+            <stop offset="0" stop-color="#7CF6FF" stop-opacity=".34"/><stop offset="1" stop-color="#8B4CF0" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="a3ball" cx=".38" cy=".3" r=".8">
+            <stop offset="0" stop-color="#F4FFFF"/><stop offset=".32" stop-color="#96F9FF"/>
+            <stop offset=".78" stop-color="#6FA6FF"/><stop offset="1" stop-color="#8B6CF0"/>
+          </radialGradient>
+          <linearGradient id="a3brick" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#A9B8FF"/><stop offset="1" stop-color="#5566DE"/>
+          </linearGradient>
+          <g id="a3star">
+            <path d="M0,-11 L2.9,-2.9 L11,0 L2.9,2.9 L0,11 L-2.9,2.9 L-11,0 L-2.9,-2.9 Z" fill="#FFD93D"/>
+          </g>
+        </defs>
+        <rect width="512" height="512" fill="url(#a3bg)"/>
+        <rect width="512" height="512" fill="url(#a3glow)"/>
+        <!-- 弹跳轨迹点 -->
+        <g fill="#7CF6FF">
+          <circle cx="256" cy="66" r="6" opacity=".45"/>
+          <circle cx="256" cy="92" r="8" opacity=".6"/>
+          <circle cx="256" cy="122" r="10" opacity=".75"/>
+        </g>
+        <!-- 周围萌块（含带笑脸的） -->
+        <g>
+          <rect x="70" y="150" width="44" height="44" rx="10" fill="url(#a3brick)" transform="rotate(-12 92 172)"/>
+          <g transform="rotate(-12 92 172)">
+            <circle cx="83" cy="167" r="3.4" fill="#1B2150"/><circle cx="101" cy="167" r="3.4" fill="#1B2150"/>
+            <path d="M84,178 Q92,185 100,178" fill="none" stroke="#1B2150" stroke-width="2.6" stroke-linecap="round"/>
+          </g>
+          <rect x="398" y="160" width="40" height="40" rx="10" fill="url(#a3brick)" transform="rotate(14 418 180)"/>
+          <rect x="86" y="336" width="38" height="38" rx="9" fill="url(#a3brick)" transform="rotate(16 105 355)"/>
+          <rect x="392" y="330" width="44" height="44" rx="10" fill="url(#a3brick)" transform="rotate(-14 414 352)"/>
+          <g transform="rotate(-14 414 352)">
+            <circle cx="405" cy="347" r="3.4" fill="#1B2150"/><circle cx="423" cy="347" r="3.4" fill="#1B2150"/>
+            <path d="M406,358 Q414,365 422,358" fill="none" stroke="#1B2150" stroke-width="2.6" stroke-linecap="round"/>
+          </g>
+        </g>
+        <!-- 落地阴影 -->
+        <ellipse cx="256" cy="440" rx="118" ry="24" fill="#000000" opacity=".22"/>
+        <!-- 吉祥物球体 -->
+        <circle cx="256" cy="268" r="112" fill="url(#a3ball)" stroke="#EAF6FF" stroke-opacity=".45" stroke-width="5"/>
+        <ellipse cx="214" cy="212" rx="30" ry="18" fill="#FFFFFF" opacity=".5" transform="rotate(-28 214 212)"/>
+        <!-- 腮红 -->
+        <circle cx="196" cy="292" r="17" fill="#FF8FD0" opacity=".5"/>
+        <circle cx="316" cy="292" r="17" fill="#FF8FD0" opacity=".5"/>
+        <!-- 眼睛 -->
+        <ellipse cx="220" cy="256" rx="25" ry="29" fill="#FFFFFF"/>
+        <ellipse cx="292" cy="256" rx="25" ry="29" fill="#FFFFFF"/>
+        <circle cx="226" cy="262" r="13" fill="#1B2150"/>
+        <circle cx="298" cy="262" r="13" fill="#1B2150"/>
+        <circle cx="231" cy="255" r="5" fill="#FFFFFF"/>
+        <circle cx="303" cy="255" r="5" fill="#FFFFFF"/>
+        <!-- 微笑 -->
+        <path d="M234,296 Q256,320 278,296" fill="none" stroke="#1B2150" stroke-width="7" stroke-linecap="round"/>
+        <!-- 星光 -->
+        <use href="#a3star" transform="translate(146,116) scale(1.0)"/>
+        <use href="#a3star" transform="translate(378,110) scale(.85)"/>
+        <use href="#a3star" transform="translate(128,300) scale(.7)"/>
+        <use href="#a3star" transform="translate(392,286) scale(.75)"/>
+      </svg>
+    </div>
+    <h2>萌弹宝宝</h2>
+    <p class="desc">把弹球拟人成有大眼睛和腮红的萌系吉祥物，被会笑的方块环绕。亲和力最强，适合走可爱休闲、拉新与社交分享路线。</p>
+    <div class="btns">
+      <button class="dl" onclick="exportPNG('svgV3','tantan-avatar-144.png',144)">下载 PNG 144</button>
+      <button class="mini" onclick="exportPNG('svgV3','tantan-avatar-1024.png',1024)">1024</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div>选定后点「下载 PNG 144」（微信小程序头像标准尺寸 144×144），需要高清可点 1024。</div>
+  <div class="steps">
+    · 满幅方形、无透明边，符合小程序头像要求；<br>
+    · 若下载无反应，请用 <code>node serve.js</code> 打开本页（<code>http://127.0.0.1:9100/design/avatar-mockups.html</code>）再试；<br>
+    · 需要改配色 / 加文字 / 换元素，告诉我方向即可微调。
+  </div>
+</footer>
+
+<script>
+function exportPNG(id, filename, size) {
+  size = size || 1024;
+  var svg = document.getElementById(id);
+  var clone = svg.cloneNode(true);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('width', size);
+  clone.setAttribute('height', size);
+  var src = new XMLSerializer().serializeToString(clone);
+  var blob = new Blob([src], { type: 'image/svg+xml;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var img = new Image();
+  img.onload = function () {
+    var canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function (b) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }, 'image/png');
+  };
+  img.onerror = function () {
+    URL.revokeObjectURL(url);
+    alert('导出失败：请改用 node serve.js 打开本页后重试。');
+  };
+  img.src = url;
+}
+</script>
+</body>
+</html>

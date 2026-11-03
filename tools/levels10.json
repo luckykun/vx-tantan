@@ -1,0 +1,374 @@
+[
+ {
+  "id": 1,
+  "name": "爱心初动",
+  "gaps": [
+   [
+    10,
+    13
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "........................",
+   ".....BBBBB....BBBBB.....",
+   "....BBBBBBB..BBBBBBB....",
+   "...BBBBBBBBBBBBBBBBBB...",
+   "...BBSBBBBBBBBBBBBSBB...",
+   "....BBBBBBBBBBBBBBBB....",
+   ".....BBTBBBBBBBBTBB.....",
+   "......BBBBBBBBBBBB......",
+   ".......BBLBBBBLBB.......",
+   "........BBPBBPBB........",
+   ".........BBBBBB.........",
+   "..........BBBB..........",
+   "...........BB...........",
+   "........................",
+   "........................",
+   "........................",
+   "........................",
+   "........................",
+   "WWWWWWWWWW....WWWWWWWWWW"
+  ]
+ },
+ {
+  "id": 2,
+  "name": "菱形迷城",
+  "gaps": [
+   [
+    4,
+    6
+   ],
+   [
+    17,
+    19
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "...........BB...........",
+   "..........BBBB..........",
+   ".........BBBBBB.........",
+   "........SBBBBBBS........",
+   ".......BBBBBBBBBB.......",
+   "......GBBBWWWWBBBG......",
+   ".....BBBBBWWWWBBBBB.....",
+   "....BBXBBBWWWWBBBXBB....",
+   ".....BBBBBWWWWBBBBB.....",
+   "......BTBBWWWWBBTB......",
+   ".......BBBBBBBBBB.......",
+   "........BLBBBBLB........",
+   ".........BBBBBB.........",
+   "..........PBBP..........",
+   "...........BB...........",
+   "........................",
+   "........................",
+   "........................",
+   "WWWW...WWWWWWWWWW...WWWW"
+  ]
+ },
+ {
+  "id": 3,
+  "name": "沙漏迷阵",
+  "gaps": [
+   [
+    11,
+    12
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "..BBBBBBBBBBBBBBBBBBBB..",
+   "...BSBBBBBBBBBBBBBBSB...",
+   "....BBBBBBBBBBBBBBBB....",
+   ".....BTBBBBBBBBBBTB.....",
+   "......BBBBBBBBBBBB......",
+   ".......BBBBBBBBBB.......",
+   "........BXBBBBXB........",
+   ".........BBBBBB.........",
+   "........BBBBBBBB........",
+   ".......LBBBBBBBBL.......",
+   "......BBBBBBBBBBBB......",
+   ".....BBBBBBBBBBBBBB.....",
+   "....PBBBBBBBBBBBBBBP....",
+   "...BBBBBBBBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBBBBBBBB..",
+   "........................",
+   "........................",
+   "........................",
+   "WWWWWWWWWWW..WWWWWWWWWWW"
+  ]
+ },
+ {
+  "id": 4,
+  "name": "空心圆环",
+  "gaps": [
+   [
+    3,
+    7
+   ],
+   [
+    16,
+    20
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   ".........BBBBBB.........",
+   ".......BBBBBBBBBB.......",
+   "......SBBBBBBBBBBS......",
+   ".....BBBBBBBBBBBBBB.....",
+   "....BXBBB......BBBXB....",
+   "....BBBBB......BBBBB....",
+   "...BTBBBB......BBBBTB...",
+   "...BBBBBB......BBBBBB...",
+   "...BBBBBB......BBBBBB...",
+   "....BLBBB......BBBLB....",
+   "....BBBBB......BBBBB....",
+   ".....BBBBBBBBBBBBBB.....",
+   "......PBBBBBBBBBBP......",
+   ".......BBBBBBBBBB.......",
+   ".........BBBBBB.........",
+   "........................",
+   "........................",
+   "........................",
+   "WWW.....WWWWWWWW.....WWW"
+  ]
+ },
+ {
+  "id": 5,
+  "name": "十字雷阵",
+  "gaps": [
+   [
+    6,
+    8
+   ],
+   [
+    15,
+    17
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "..........BBBB..........",
+   ".........SBBBBS.........",
+   ".........BBBBBB.........",
+   ".......BBBBBBBBBB.......",
+   "....BGBBBBBBBBBBBBGB....",
+   "..BBBBBBBBBWWBBBBBBBBB..",
+   "..BXBBBBBBTWWTBBBBBBXB..",
+   "..BBBBBBBBBWWBBBBBBBBB..",
+   "..BBBBBBBBBWWBBBBBBBBB..",
+   "....BBBBBBBBBBBBBBBB....",
+   ".......BLBBBBBBLB.......",
+   ".........BBBBBB.........",
+   ".........BBBBBB.........",
+   "..........PBBP..........",
+   "..........BBBB..........",
+   "........................",
+   "........................",
+   "........................",
+   "WWWWWW...WWWWWW...WWWWWW"
+  ]
+ },
+ {
+  "id": 6,
+  "name": "拱门守卫",
+  "gaps": [
+   [
+    2,
+    3
+   ],
+   [
+    11,
+    12
+   ],
+   [
+    20,
+    21
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "..BXBBBBBBBBBBBBBBBBXB..",
+   "..BBBBBBBBBBBBBBBBBBBB..",
+   "..BBBBBW........WBBBBB..",
+   "..BSBBGW........WGBBSB..",
+   "..BBBBBW........WBBBBB..",
+   "..BBBBBW........WBBBBB..",
+   "..BBTBBW........WBBTBB..",
+   "..BBBBBW........WBBBBB..",
+   "..BBBBBW........WBBBBB..",
+   "..BLBBBW........WBBBLB..",
+   "..BBBBBW........WBBBBB..",
+   "..BBBBBW........WBBBBB..",
+   "..BBPBBW........WBBPBB..",
+   "..BBBBBW........WBBBBB..",
+   "..BBBBBW........WBBBBB..",
+   "........................",
+   "........................",
+   "........................",
+   "WW..WWWWWWW..WWWWWWW..WW"
+  ]
+ },
+ {
+  "id": 7,
+  "name": "盾牌密纹",
+  "gaps": [
+   [
+    8,
+    11
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "..BBBBBBBBBBBBBBBBBBBB..",
+   "..BSBBBBBBBBBBBBBBBBSB..",
+   "..GBBBBBBBBBBBBBBBBBBG..",
+   "...BXBBBBBBBBBBBBBBXB...",
+   "...BBBBBBBBBBBBBBBBBB...",
+   "....BBBBBBBWWBBBBBBB....",
+   "....BTBBBBBWWBBBBBTB....",
+   ".....BBBBBBWWBBBBBB.....",
+   "......BBBBBBBBBBBB......",
+   ".......BLBBBBBBLB.......",
+   "........BBBBBBBB........",
+   ".........PBBBBP.........",
+   "..........BBBB..........",
+   "...........BB...........",
+   "...........BB...........",
+   "........................",
+   "........................",
+   "........................",
+   "WWWWWWWW....WWWWWWWWWWWW"
+  ]
+ },
+ {
+  "id": 8,
+  "name": "蝶舞双谷",
+  "gaps": [
+   [
+    5,
+    6
+   ],
+   [
+    17,
+    18
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "....BBBBBBBWWBBBBBBB....",
+   "...BSBBBBBBWWBBBBBBSB...",
+   "..GBBBBBBBBWWBBBBBBBBG..",
+   "..BTBBBBBBBWWBBBBBBBTB..",
+   "...BBBBBBBBWWBBBBBBBB...",
+   "....BBBBBBBWWBBBBBBB....",
+   ".....BLBBBBWWBBBBLB.....",
+   "......BBBBBWWBBBBB......",
+   ".......BBBBWWBBBB.......",
+   "........BPBWWBPB........",
+   ".........BBWWBB.........",
+   "..........BWWB..........",
+   "........XBBWWBBX........",
+   ".......BBBBWWBBBB.......",
+   "......BBBBBWWBBBBB......",
+   "........................",
+   "........................",
+   "........................",
+   "WWWWW..WWWWWWWWWW..WWWWW"
+  ]
+ },
+ {
+  "id": 9,
+  "name": "箭头之树",
+  "gaps": [
+   [
+    9,
+    13
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   "........................",
+   "...........BB...........",
+   "..........BBBB..........",
+   ".........SBBBBS.........",
+   "........BBBBBBBB........",
+   ".......BBBBBBBBBB.......",
+   "......BTBBBBBBBBTB......",
+   ".....GBBBBBBBBBBBBG.....",
+   "....BBBBBBBWWBBBBBBB....",
+   "...XBBBBBBLBBLBBBBBBX...",
+   "..BBBBBBBBBBBBBBBBBBBB..",
+   ".........BBBBBB.........",
+   ".........PBBBBP.........",
+   ".........BBBBBB.........",
+   ".........BBBBBB.........",
+   ".........BBBBBB.........",
+   "........................",
+   "........................",
+   "........................",
+   "WWWWWWWWW.....WWWWWWWWWW"
+  ]
+ },
+ {
+  "id": 10,
+  "name": "糖果堡垒",
+  "gaps": [
+   [
+    4,
+    6
+   ],
+   [
+    12,
+    14
+   ],
+   [
+    19,
+    21
+   ]
+  ],
+  "map": [
+   "........................",
+   "........................",
+   ".BBBBBBBBBBWWBBBBBBBBBB.",
+   ".BSBBBBBBBBWWBBBBBBBBSB.",
+   ".BBBTBBBBBBWWBBBBBBTBBB.",
+   ".BBBBBBBBBBWWBBBBBBBBBB.",
+   ".BBBB....GBBBBG....BBBB.",
+   ".BBBX....BBBBBB....XBBB.",
+   ".BBBB....LBBBBL....BBBB.",
+   ".BBBB....BBBBBB....BBBB.",
+   ".BBBBBBBBBBWWBBBBBBBBBB.",
+   ".BBBBBBBBBBWWBBBBBBBBBB.",
+   ".BBBBBBBBB....BBBBBBBBB.",
+   ".BBBBBBBBP....PBBBBBBBB.",
+   ".BBBBBBBBB....BBBBBBBBB.",
+   ".BBSBBBBBBBWWBBBBBBBSBB.",
+   ".BBBBXBBBBBWWBBBBBXBBBB.",
+   ".BBBBBBBBBBWWBBBBBBBBBB.",
+   "........................",
+   "........................",
+   "........................",
+   "WWWW...WWWWW...WWWW...WW"
+  ]
+ }
+]

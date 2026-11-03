@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>弹弹消消乐 · 界面视觉稿 v4.0</title>
+<link rel="stylesheet" href="css/doc.css">
+<style>
+/* ---- 本页面专用：浮层 / 装饰 ---- */
+.ovl { position: absolute; inset: 0; background: rgba(8,8,22,.74);
+  display: flex; align-items: center; justify-content: center; z-index: 9; }
+.ovl .box { width: 82%; background: linear-gradient(180deg,#2C2454,#191534);
+  border: 1px solid rgba(255,255,255,.15); border-radius: 16px; padding: 14px 10px 10px;
+  text-align: center; box-shadow: 0 14px 40px rgba(0,0,0,.55); }
+.ovl .ttl { font-size: 17px; font-weight: 900; color: #fff; letter-spacing: 1px; }
+.ovl .ttl.r { color: var(--red); }
+.ovl .sub { font-size: 8.5px; color: rgba(255,255,255,.45); margin-top: 2px; letter-spacing: 1.6px; }
+.ovl .btn { margin: 5px 16px; padding: 7px; font-size: 10.5px; border-radius: 10px; }
+.mnum { display: flex; justify-content: space-around; margin: 9px 0 7px; }
+.mnum div { font-size: 7.5px; color: rgba(255,255,255,.42); }
+.mnum b { display: block; font-size: 14px; color: var(--yellow); font-family: var(--mono); margin-bottom: 1px; }
+.combo { position: absolute; right: 12px; bottom: 122px; font-size: 13px; font-weight: 900;
+  color: var(--yellow); text-shadow: 0 0 9px rgba(255,217,61,.65); z-index: 6; }
+.tbar { position: absolute; left: 8px; right: 8px; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,.12); overflow: hidden; z-index: 5; }
+.tbar s { display: block; height: 100%; text-decoration: none; background: var(--cyan); }
+.tbar.warn s { background: var(--red); animation: bl .5s steps(2) infinite; }
+@keyframes bl { 50% { opacity: .25; } }
+.gaplight { position: absolute; width: 26px; height: 100%; z-index: 4;
+  background: linear-gradient(180deg, rgba(124,246,255,0), rgba(124,246,255,.28)); }
+.arr { position: absolute; font-size: 8px; color: var(--cyan); z-index: 6; }
+.trail { position: absolute; border-radius: 50%; background: rgba(127,216,255,.5); }
+.spark { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; }
+.chip { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 10px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); margin: 0 4px 6px 0; }
+.lb { padding: 0 14px; }
+.lb .r { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 9px;
+  font-size: 10px; color: rgba(255,255,255,.75); border-bottom: 1px solid rgba(255,255,255,.06); }
+.lb .r.me { background: rgba(255,217,61,.13); border: 1px solid rgba(255,217,61,.3); }
+.lb .rk { width: 15px; font-weight: 800; color: var(--txt3); font-family: var(--mono); font-size: 9px; }
+.lb .av { width: 15px; height: 15px; border-radius: 50%; background: linear-gradient(135deg,#6C7BFF,#8B4CF0); flex: 0 0 15px; }
+.lb .sc { margin-left: auto; font-family: var(--mono); font-weight: 700; color: var(--yellow); font-size: 10px; }
+.deco { display: flex; justify-content: center; gap: 5px; margin: 4px 0 14px; }
+.deco i { width: 15px; height: 15px; border-radius: 4px; display: block; }
+.spec { display: flex; align-items: center; gap: 9px; font-size: 12px; margin-bottom: 7px; }
+.spec .sw { width: 26px; height: 26px; border-radius: 7px; flex: 0 0 26px; border: 1px solid rgba(255,255,255,.14); }
+.spec code { font-size: 11px; }
+h2 .no { background: var(--acc2); }
+.avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg,#6C7BFF,#8B4CF0);
+  border: 2px solid rgba(255,255,255,.25); box-shadow: 0 2px 8px rgba(108,123,255,.4); flex: 0 0 28px; }
+.profile-box { width: 86%; background: linear-gradient(180deg,#2C2454,#191534);
+  border: 1px solid rgba(255,255,255,.15); border-radius: 16px; padding: 16px 12px 12px;
+  text-align: center; box-shadow: 0 14px 40px rgba(0,0,0,.55); }
+.profile-box .avatar-lg { width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 8px;
+  background: linear-gradient(135deg,#6C7BFF,#8B4CF0); border: 3px solid rgba(255,217,61,.5);
+  box-shadow: 0 4px 16px rgba(108,123,255,.5); display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff; font-weight: 900; }
+.pinfo { display: flex; justify-content: space-around; margin: 10px 0 8px; }
+.pinfo div { font-size: 7.5px; color: rgba(255,255,255,.42); }
+.pinfo b { display: block; font-size: 14px; color: var(--yellow); font-family: var(--mono); margin-bottom: 1px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="side" id="nav">
+  <div class="brand">弹弹消消乐 <span>视觉稿</span></div>
+  <div class="ver">UI Mockups · v4.0（v1→v2 变更见 specs/design-v2-changes.md；v3/v4 变更见本文与 TODO.md）</div>
+  <div class="grp">文档</div>
+  <a href="index.html">← 返回完整设计稿</a>
+  <a href="prototype.html" class="ext">▶ 可玩交互原型</a>
+  <div class="grp">本稿章节</div>
+  <a href="#u1">01 视觉基调</a>
+  <a href="#u2">02 屏幕清单与流转</a>
+  <a href="#u3">03 高保真稿（10 屏）</a>
+  <a href="#u4">04 组件规范</a>
+  <a href="#u5">05 动效与转场</a>
+  <a href="#u6">06 资源清单</a>
+  <a href="#u7">07 落地注意事项</a>
+</nav>
+
+<main>
+<h1 style="font-size:27px;margin:0 0 6px">界面视觉稿</h1>
+<p class="lead">
+  本文档给出 10 个界面的高保真稿与组件、动效、资源规范。稿子<b>用 HTML/CSS 构建而非图片</b>，
+  好处是配色字号可直接复制、开发者能当样式基线用，改起来不用重画。
+  下方手机模型均按 <b>242 × 430</b> 等比呈现（真实逻辑分辨率 375 × 667）。
+</p>
+
+<!-- ============ 01 ============ -->
+<section id="u1">
+<h2><span class="no">01</span>视觉基调</h2>
+<div class="grid2">
+  <div class="card">
+    <h3 style="margin-top:0">定位关键词</h3>
+    <div>
+      <span class="chip">暗底霓虹</span><span class="chip">糖果质感</span><span class="chip">高对比方块</span>
+      <span class="chip">发光小球</span><span class="chip">克制的信息密度</span><span class="chip">强反馈</span>
+    </div>
+    <p style="font-size:13px;color:var(--txt2);margin:12px 0 0">
+      整体走<b>「深夜台球厅」</b>路线：背景压到接近纯黑，让糖果色方块自己发光。
+      这样做的三个理由：① 方块是玩法核心，v4 需求①将可消除方块统一为单一天蓝（辨识靠形状/图标），暗底让方块与七类道具块的层级拉开到最高；
+      ② 霓虹光晕天然适合表现「分裂」「入缺口」的高光时刻；
+      ③ 省电且在 OLED 机型上观感最好。
+    </p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">反面参考（我们不做的）</h3>
+    <p style="font-size:13.5px;color:var(--txt2)">
+      ✗ <b>明亮卡通风</b>（大量白底 + 粗黑描边）：会让「墙壁 / 可消除方块」的层级关系糊在一起，
+      且与同类弹球产品高度雷同。<br>
+      ✗ <b>拟物 3D 方块</b>：贴图成本高、包体大（主包 4MB 限制）、低端机 draw call 压力大。<br>
+      ✗ <b>满屏特效</b>：方块数已达 49，若每块都带闪光，玩家无法快速读取「该打哪一块」。
+    </p>
+    <div class="note risk" style="margin:10px 0 0;font-size:12.5px">
+      <span class="t">唯一需要小心的点</span>
+      暗底霓虹在<b>户外强光下可读性差</b>。方案：设置里提供「明亮主题」切换（P1），
+      两套主题共用同一份方块色板，仅换背景与描边亮度。
+    </div>
+  </div>
+</div>
+
+<h3>1.1 色板（可直接复制）</h3>
+<div class="grid2">
+  <div class="card">
+    <div class="spec"><span class="sw" style="background:#141634"></span><span>背景渐变起</span><code>#141634</code></div>
+    <div class="spec"><span class="sw" style="background:#241548"></span><span>背景渐变止</span><code>#241548</code></div>
+    <div class="spec"><span class="sw" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.13)"></span><span>容器底色 / 描边</span><code>4% / 13% white</code></div>
+    <div class="spec"><span class="sw" style="background:#5A608C"></span><span>墙壁（不可消除）</span><code>#5A608C → #33375A</code></div>
+    <div class="spec"><span class="sw" style="background:#7CF6FF"></span><span>分裂块 / 主强调</span><code>#7CF6FF → #00B8D4</code></div>
+    <div class="spec"><span class="sw" style="background:#FFD93D"></span><span>横条 / 金币 / 高亮</span><code>#FFD93D → #FF9F43</code></div>
+    <div class="spec"><span class="sw" style="background:#7CA0DE"></span><span>可消除方块（v4 单色）</span><code>#9DB0FF → #5566DE</code></div>
+    <div class="spec"><span class="sw" style="background:#FF8A7A"></span><span>失败 / 危险提示</span><code>#FF8A7A → #F0514B</code></div>
+    <div class="spec"><span class="sw" style="background:radial-gradient(circle at 35% 30%,#fff,#7FD8FF)"></span><span>小球</span><code>#FFF → #7FD8FF</code></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">1.2 字体与字号（逻辑 pt）</h3>
+    <table style="margin-bottom:8px">
+      <thead><tr><th>用途</th><th class="num">字号</th><th>字重</th><th>色值</th></tr></thead>
+      <tbody>
+        <tr><td>Logo 标题</td><td class="num">44</td><td>900</td><td>三色渐变</td></tr>
+        <tr><td>结算大标题</td><td class="num">26</td><td>900</td><td>#FFF</td></tr>
+        <tr><td>HUD 数值</td><td class="num">16</td><td>800 / mono</td><td>随语义色</td></tr>
+        <tr><td>HUD 标签</td><td class="num">9</td><td>500</td><td>45% white</td></tr>
+        <tr><td>按钮</td><td class="num">16</td><td>700</td><td>#2A2140 / #FFF</td></tr>
+        <tr><td>方块内数字</td><td class="num">11</td><td>800</td><td>60% black</td></tr>
+        <tr><td>飘字</td><td class="num">14</td><td>800</td><td>取方块色</td></tr>
+        <tr><td>连击大字</td><td class="num">22</td><td>900</td><td>#FFD93D</td></tr>
+        <tr><td>正文 / 说明</td><td class="num">12</td><td>400</td><td>65% white</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--txt3);margin:0">
+      <b>字体</b>：中文用系统默认（<code>-apple-system / PingFang SC</code>），
+      数字用 <code>DIN Alternate / Menlo</code> 等宽，<b>不引入外部字体</b>（省包体、免加载闪烁）。
+    </p>
+  </div>
+</div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="u2">
+<h2><span class="no">02</span>屏幕清单与流转</h2>
+<div class="flow">
+  <span class="step">启动页</span><span class="arr">→</span>
+  <span class="step hot">首页（开始游戏 + 头像）</span><span class="arr">→</span>
+  <span class="step">选关页</span><span class="arr">→</span>
+  <span class="step hot">游戏页（PLAY：瞄准 / 飞行 / 接住回弹并行）</span><span class="arr">→</span>
+  <span class="step">通关结算</span><span class="arr">→</span>
+  <span class="step">下一关</span>
+</div>
+<div class="flow">
+  <span class="step">游戏页</span><span class="arr">→</span>
+  <span class="step">失败结算</span><span class="arr">→</span>
+  <span class="step hot">看广告 +1 球</span><span class="arr">/</span><span class="step">重试</span><span class="arr">/</span><span class="step">退出</span>
+</div>
+<div class="flow">
+  <span class="step">游戏页</span><span class="arr">→</span>
+  <span class="step">暂停面板</span><span class="arr">→</span>
+  <span class="step">设置（音效 / 震动 / 主题）</span><span class="arr">·</span><span class="step">排行榜</span>
+</div>
+<table>
+  <thead><tr><th style="width:8%">#</th><th style="width:16%">界面</th><th style="width:11%">优先级</th><th style="width:30%">进入方式</th><th>要点</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>启动页</td><td><span class="tag p0">P0</span></td><td>冷启动自动</td><td>≤1.5s，进度条即真实资源加载，不做假动画</td></tr>
+    <tr><td>2</td><td>首页</td><td><span class="tag p0">P0</span></td><td>启动完成</td><td>主 CTA「开始游戏」，右上角头像点击弹出个人信息层</td></tr>
+    <tr><td>2b</td><td>个人信息弹窗</td><td><span class="tag p0">P0</span></td><td>首页头像</td><td>半透明遮罩 + 居中卡片：头像昵称、ID、总星数、通过关卡、最高分、累计消除、最长回弹链；底部「继续」+「切换账号」</td></tr>
+    <tr><td>3</td><td>选关页</td><td><span class="tag p0">P0</span></td><td>首页「关卡」</td><td>4 列网格，已解锁可点，未解锁灰显；显示每关星级</td></tr>
+    <tr><td>4</td><td>游戏 · 瞄准（PLAY 内）</td><td><span class="tag p0">P0</span></td><td>选关 / 拖空白处</td><td>弹道预测点列（<b>v2 已删方向虚线</b>）+ 角度读数 + 入缺口颜色反馈</td></tr>
+    <tr><td>5</td><td>游戏 · 飞行/回弹（PLAY 内）</td><td><span class="tag p0">P0</span></td><td>发射 / 接住回弹</td><td>隐去瞄准辅助，只留球·挡板·<b>耗时</b>·回弹连击（v2 无飞行/瞄准互斥态）</td></tr>
+    <tr><td>6</td><td>游戏 · 超时开底警告</td><td><span class="tag p1">P1</span></td><td>关卡硬超时（180s）前 3s</td><td>底部墙壁行红色闪烁 + 提示「闸门将开」（v3 已取消旧「停滞 22s 开底」，仅保留硬超时排空兼防死循环）</td></tr>
+    <tr><td>7</td><td>暂停 / 设置</td><td><span class="tag p0">P0</span></td><td>HUD 右上暂停</td><td>半屏浮层，主循环必须真停（不跑 update）</td></tr>
+    <tr><td>8</td><td>通关结算</td><td><span class="tag p0">P0</span></td><td>方块清空</td><td>星星逐颗弹出 + 分数滚动 + 三星触发分享</td></tr>
+    <tr><td>9</td><td>失败结算</td><td><span class="tag p0">P0</span></td><td>3 球全漏且有方块剩余</td><td>首要 CTA 是广告复活（+1 球），其次重试；绝不出现「关闭」按钮</td></tr>
+    <tr><td>10</td><td>好友排行榜</td><td><span class="tag p1">P1</span></td><td>首页「排行」</td><td>开放数据域，需 <code>SharedCanvas</code> 渲染</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="u3">
+<h2><span class="no">03</span>高保真稿</h2>
+<p style="font-size:13px;color:var(--txt2)">下面 10 屏（含新增个人信息弹窗）为纯 CSS 绘制，可缩放、可取色、可直接改。</p>
+
+<div class="phones">
+
+<!-- ───────── 1 启动页 ───────── -->
+<div class="phone"><div class="scr">
+  <div style="position:absolute;inset:0;background:
+    radial-gradient(120% 60% at 50% 0%, rgba(108,123,255,.22), transparent 70%),
+    linear-gradient(180deg,#141634,#241548)"></div>
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div class="title-xl" style="margin-top:78px">弹弹消消乐</div>
+  <div class="title-sub">BOUNCE · BREAK</div>
+  <div class="deco">
+    <i style="background:linear-gradient(180deg,#FF8A7A,#F0514B)"></i>
+    <i style="background:linear-gradient(180deg,#FFE07A,#F5B91E)"></i>
+    <i style="background:linear-gradient(180deg,#7BEFC0,#22C58B)"></i>
+    <i style="background:linear-gradient(180deg,#8CC6FF,#2F7BE8)"></i>
+    <i style="background:linear-gradient(180deg,#CDA9FF,#8B4CF0)"></i>
+    <i style="background:linear-gradient(180deg,#7CF6FF,#00B8D4);box-shadow:0 0 9px rgba(0,229,255,.7)"></i>
+    <i style="background:linear-gradient(180deg,#5A608C,#33375A)"></i>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:96px;text-align:center">
+    <div style="width:118px;height:4px;border-radius:2px;background:rgba(255,255,255,.13);margin:0 auto;overflow:hidden">
+      <s style="display:block;width:64%;height:100%;background:linear-gradient(90deg,#7CF6FF,#FFD93D)"></s>
+    </div>
+    <div style="font-size:8.5px;color:rgba(255,255,255,.4);margin-top:7px;letter-spacing:1px">正在加载关卡资源 64%</div>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:26px;text-align:center;font-size:7.5px;color:rgba(255,255,255,.28);line-height:1.7">
+    健康游戏忠告：抵制不良游戏，拒绝盗版游戏<br>适度游戏益脑，沉迷游戏伤身
+  </div>
+</div><div class="cap">01 启动页<small>标题 + 方块条装饰 + 真实加载进度</small></div></div>
+
+<!-- ───────── 2 首页 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div style="display:flex;align-items:center;justify-content:flex-end;padding:6px 12px 0">
+    <span class="avatar" title="点击查看详情"></span>
+  </div>
+  <div class="title-xl" style="margin-top:18px;font-size:26px">弹弹消消乐</div>
+  <div class="title-sub" style="margin-bottom:10px;font-size:8px">BOUNCE · BREAK</div>
+  <div style="position:relative;margin:0 14px;height:110px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.04);padding:3px">
+    <div class="cells" style="grid-template-rows:repeat(4,1fr)">
+      <i class="e"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="s"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="e"></i>
+      <i class="b2"></i><i class="b2"></i><i class="w"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="w"></i><i class="b2"></i><i class="b2"></i>
+      <i class="e"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="e"></i>
+      <i class="w"></i><i class="w"></i><i class="w"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="w"></i><i class="w"></i><i class="w"></i>
+    </div>
+    <div class="paddle" style="bottom:10px;width:52px"></div>
+  </div>
+  <div class="uibtn gold" style="margin-top:14px;padding:13px;font-size:15px;font-weight:800;letter-spacing:1px">开 始 游 戏</div>
+  <div style="display:flex;gap:8px;margin:8px 22px 0">
+    <div class="uibtn dim" style="flex:1;margin:0;padding:7px;font-size:10px">关卡</div>
+    <div class="uibtn dim" style="flex:1;margin:0;padding:7px;font-size:10px">排行</div>
+    <div class="uibtn dim" style="flex:1;margin:0;padding:7px;font-size:10px">设置</div>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:7.5px;color:rgba(255,255,255,.25)">v2.0.0 · 微信小游戏</div>
+</div><div class="cap">02 首页<small>主 CTA「开始游戏」 + 右上角头像（点击开个人弹层）</small></div></div>
+
+<!-- ───────── 2b 首页 · 个人信息弹窗 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div style="display:flex;align-items:center;justify-content:flex-end;padding:6px 12px 0">
+    <span class="avatar"></span>
+  </div>
+  <div class="title-xl" style="margin-top:18px;font-size:26px;opacity:.3">弹弹消消乐</div>
+  <div class="title-sub" style="opacity:.3">BOUNCE · BREAK</div>
+  <div style="position:absolute;inset:0;background:rgba(8,8,22,.74);display:flex;align-items:center;justify-content:center;z-index:9">
+    <div class="profile-box">
+      <div class="avatar-lg">弹</div>
+      <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:2px">弹弹玩家</div>
+      <div style="font-size:8px;color:rgba(255,255,255,.4);letter-spacing:1px;margin-bottom:8px">ID: 88260413 · 微信登录</div>
+      <div class="pinfo">
+        <div><b>42</b>总星数</div>
+        <div><b>12</b>通过关卡</div>
+        <div><b>3,470</b>最高分</div>
+      </div>
+      <div style="font-size:8.5px;color:rgba(255,255,255,.45);margin-bottom:10px;line-height:1.6">
+        累计消除 <b style="color:var(--cyan);font-family:var(--mono)">1,247</b> 块 · 最长回弹链 <b style="color:var(--yellow);font-family:var(--mono)">×18</b>
+      </div>
+      <div style="display:flex;gap:6px;margin:0 4px">
+        <div class="uibtn gold" style="flex:1;margin:0;padding:7px;font-size:10px">继 续</div>
+        <div class="uibtn dim" style="flex:1;margin:0;padding:7px;font-size:10px">切换账号</div>
+      </div>
+    </div>
+  </div>
+</div><div class="cap">02b 个人信息弹窗<small>点击头像后弹出，展示星数/关卡/最高分/回弹链等数据</small></div></div>
+
+<!-- ───────── 3 选关页 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div style="display:flex;align-items:center;padding:6px 12px;font-size:12px;font-weight:800">
+    <span style="color:rgba(255,255,255,.55);font-weight:400;font-size:14px">‹</span>
+    <span style="flex:1;text-align:center;color:#fff">选择关卡</span>
+    <span style="font-size:9px;color:var(--yellow);font-weight:800">★ 42/90</span>
+  </div>
+  <div style="padding:2px 14px 8px;font-size:8px;color:rgba(255,255,255,.4);letter-spacing:1px">第一章 · 新手村（1–10 关）</div>
+  <div class="lvgrid">
+    <div>1<small>★★★</small></div>
+    <div>2<small>★★<i style="color:rgba(255,255,255,.16)">★</i></small></div>
+    <div>3<small>★★★</small></div>
+    <div>4<small>★<i style="color:rgba(255,255,255,.16)">★★</i></small></div>
+    <div class="cur">5<small>NEW</small></div>
+    <div class="lock">🔒</div>
+    <div class="lock">🔒</div>
+    <div class="lock">🔒</div>
+  </div>
+  <div style="padding:8px 14px 3px;font-size:8px;color:rgba(255,255,255,.4);letter-spacing:1px">第二章 · 偏置回廊（11–20 关）</div>
+  <div class="lvgrid">
+    <div>9<small>★★☆</small></div>
+    <div>10<small>★★★</small></div>
+    <div class="lock">🔒</div>
+    <div class="lock">🔒</div>
+    <div class="lock">🔒</div>
+    <div class="lock">🔒</div>
+    <div class="lock">🔒</div>
+    <div class="lock">🔒</div>
+  </div>
+  <div style="margin:12px 16px 0;padding:8px 10px;border-radius:10px;background:rgba(124,246,255,.07);border:1px solid rgba(124,246,255,.2);font-size:9px;color:rgba(255,255,255,.7);line-height:1.6">
+    <b style="color:var(--cyan)">解锁规则</b><br>
+    通关即解锁下一关。星星累计解锁皮肤与每日挑战。
+  </div>
+  <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:7.5px;color:rgba(255,255,255,.28)">向下滑动查看更多 · 共 30 关</div>
+</div><div class="cap">03 选关页<small>4 列网格 / 当前关高亮 / 未解锁灰显</small></div></div>
+
+<!-- ───────── 4 游戏 · 弹道预测（PLAY 内） ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div class="hud">
+    <div><span class="k">关卡 1</span><span class="v">爱心初动</span></div>
+    <div style="text-align:center"><span class="k">剩余发射</span><span class="v y">● ● ●</span></div>
+    <div style="text-align:right"><span class="k">分数</span><span class="v">1,240</span></div>
+  </div>
+  <div class="arena" style="position:relative">
+    <div class="cells">
+      <i class="e"></i><i class="b1"></i><i class="b1"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="b1"></i><i class="b1"></i><i class="e"></i>
+      <i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="e"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i>
+      <i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i>
+      <i class="e"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="s"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="w"></i><i class="w"></i><i class="w"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="w"></i><i class="w"></i><i class="w"></i>
+    </div>
+    <div class="gaplight" style="left:calc(3px + 33.3%);top:0"></div>
+  </div>
+  <div class="catchz" style="position:relative">
+    <div class="tbar" style="top:0"><s style="width:82%"></s></div>
+    <div class="ball" style="left:calc(50% - 4.5px);bottom:34px"></div>
+    <div style="position:absolute;left:calc(50% + 22px);bottom:62px;width:5px;height:5px;border-radius:50%;background:rgba(124,246,255,.85);box-shadow:0 0 6px rgba(124,246,255,.7);z-index:6"></div>
+    <div style="position:absolute;left:calc(50% + 40px);bottom:78px;width:5px;height:5px;border-radius:50%;background:rgba(124,246,255,.7);box-shadow:0 0 6px rgba(124,246,255,.55);z-index:6"></div>
+    <div style="position:absolute;left:calc(50% + 58px);bottom:92px;width:5px;height:5px;border-radius:50%;background:rgba(124,246,255,.55);box-shadow:0 0 6px rgba(124,246,255,.4);z-index:6"></div>
+    <div style="position:absolute;left:calc(50% + 60px);bottom:88px;width:7px;height:7px;border-radius:50%;border:1px solid var(--cyan);z-index:6"></div>
+    <div class="arr" style="left:calc(50% + 44px);bottom:34px">+31° 可入缺口</div>
+    <div class="paddle"></div>
+    <div class="deathline"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:7.5px;color:rgba(255,255,255,.34)">拖空白拉方向→松手发射 · 拖横条摆位接球</div>
+  </div>
+</div><div class="cap">04 游戏 · 弹道预测（PLAY）<small><b>v2 已删方向虚线</b>，仅留预测点列 + 青色=可穿缺口 + 角度读数</small></div></div>
+
+<!-- ───────── 5 游戏 · 飞行/回弹（分裂爆发） ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div class="hud">
+    <div><span class="k">关卡 1</span><span class="v">爱心初动</span></div>
+    <div style="text-align:center"><span class="k">剩余发射</span><span class="v y">● ● <i style="font-style:normal;color:rgba(255,255,255,.28)">○</i></span></div>
+    <div style="text-align:right"><span class="k">分数</span><span class="v">2,870</span></div>
+  </div>
+  <div class="arena" style="position:relative">
+    <div class="cells">
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="b1"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="b1"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="b2"></i><i class="e"></i><i class="b2"></i><i class="e"></i><i class="b2"></i><i class="e"></i><i class="b2"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="b2"></i><i class="e"></i><i class="ball" style="position:static;width:8px;height:8px;margin:0 auto;border-radius:50%"></i><i class="e"></i><i class="b2"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="b3"></i><i class="e"></i><i class="b3"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="ball" style="position:static;width:8px;height:8px;margin:0 auto;border-radius:50%"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="w"></i><i class="w"></i><i class="w"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="w"></i><i class="w"></i><i class="w"></i>
+    </div>
+    <div style="position:absolute;left:38%;top:44%;font-size:8px;font-weight:900;color:var(--cyan);text-shadow:0 0 8px rgba(124,246,255,.8)">+25 SPLIT!</div>
+    <div style="position:absolute;left:52%;top:64%;font-size:8px;font-weight:900;color:var(--yellow)">+10</div>
+  </div>
+  <div class="catchz" style="position:relative">
+    <div class="tbar" style="top:0"><s style="width:41%;background:var(--yellow)"></s></div>
+    <div class="trail" style="width:6px;height:6px;left:46%;bottom:56px;opacity:.35"></div>
+    <div class="trail" style="width:7px;height:7px;left:48%;bottom:48px;opacity:.6"></div>
+    <div class="ball" style="left:50%;bottom:40px"></div>
+    <div class="ball" style="left:36%;bottom:62px;width:7px;height:7px;opacity:.9"></div>
+    <div class="spark" style="left:56%;bottom:52px"></div>
+    <div class="spark" style="left:42%;bottom:66px;background:var(--cyan)"></div>
+    <div class="paddle" style="left:52%"></div>
+    <div class="deathline"></div>
+    <div style="position:absolute;left:6px;bottom:2px;font-size:7.5px;color:rgba(255,255,255,.4)">同屏 5 球 · 回弹 ×3</div>
+  </div>
+  <div class="combo">×7<small style="font-size:7px;letter-spacing:1px"> 回弹 COMBO</small></div>
+</div><div class="cap">05 游戏 · 飞行/回弹（PLAY）<small>多球 + 分裂飘字 + 拖尾 + 回弹连击 + 耗时条</small></div></div>
+
+<!-- ───────── 6 游戏 · 停滞开底警告 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div class="hud">
+    <div><span class="k">关卡 12</span><span class="v">偏置回廊</span></div>
+    <div style="text-align:center"><span class="k">剩余发射</span><span class="v y">● <i style="font-style:normal;color:rgba(255,255,255,.28)">○ ○</i></span></div>
+    <div style="text-align:right"><span class="k">分数</span><span class="v">4,120</span></div>
+  </div>
+  <div class="arena" style="position:relative;border-color:rgba(255,138,122,.4)">
+    <div class="cells">
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="b2"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="b2"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="w"></i><i class="b3"></i><i class="b3"></i><i class="w"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="b3"></i><i class="ball" style="position:static;width:8px;height:8px;margin:0 auto;border-radius:50%"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="b4"></i><i class="ball" style="position:static;width:8px;height:8px;margin:0 auto;border-radius:50%"></i><i class="b4"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="b4"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="w" style="box-shadow:0 0 7px rgba(255,90,90,.85);border-color:rgba(255,90,90,.7)"></i>
+      <i class="w" style="box-shadow:0 0 7px rgba(255,90,90,.85);border-color:rgba(255,90,90,.7)"></i>
+      <i class="w" style="box-shadow:0 0 7px rgba(255,90,90,.85);border-color:rgba(255,90,90,.7)"></i>
+      <i class="e"></i><i class="e"></i><i class="e"></i>
+      <i class="w" style="box-shadow:0 0 7px rgba(255,90,90,.85);border-color:rgba(255,90,90,.7)"></i>
+      <i class="w" style="box-shadow:0 0 7px rgba(255,90,90,.85);border-color:rgba(255,90,90,.7)"></i>
+      <i class="w" style="box-shadow:0 0 7px rgba(255,90,90,.85);border-color:rgba(255,90,90,.7)"></i>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:-1px;height:14px;background:linear-gradient(0deg,rgba(255,90,90,.3),transparent)"></div>
+  </div>
+  <div class="catchz" style="position:relative">
+    <div class="tbar warn" style="top:0"><s style="width:19%"></s></div>
+    <div style="position:absolute;left:0;right:0;top:7px;text-align:center;font-size:8.5px;font-weight:800;color:var(--red);letter-spacing:1px">⚠ 2.8s 后闸门开启</div>
+    <div class="ball" style="left:40%;bottom:52px"></div>
+    <div class="ball" style="left:58%;bottom:70px;width:7px;height:7px"></div>
+    <div class="paddle" style="left:44%"></div>
+    <div class="deathline"></div>
+    <div style="position:absolute;left:6px;bottom:2px;font-size:7.5px;color:rgba(255,255,255,.4)">同屏 2 球 · 19s 无消除</div>
+  </div>
+</div><div class="cap">06 游戏 · 停滞开底警告<small>22s 无消除前 3s 底部墙行红闪 + 文字预警（240s 硬超时同理）</small></div></div>
+
+<!-- ───────── 7 暂停 / 设置 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div class="hud" style="opacity:.35">
+    <div><span class="k">关卡 2</span><span class="v">菱形迷城</span></div>
+    <div style="text-align:center"><span class="k">剩余发射</span><span class="v y">● ● ●</span></div>
+    <div style="text-align:right"><span class="k">分数</span><span class="v">1,240</span></div>
+  </div>
+  <div class="arena" style="opacity:.25"><div class="cells">
+      <i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="s"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i>
+      <i class="b2"></i><i class="w"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="w"></i><i class="b2"></i><i class="b2"></i>
+      <i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i>
+      <i class="w"></i><i class="w"></i><i class="w"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="w"></i><i class="w"></i><i class="w"></i>
+    </div></div>
+  <div class="ovl"><div class="box">
+    <div class="ttl">暂停</div>
+    <div class="sub">PAUSED · 第 2 关</div>
+    <div style="margin:10px 0 4px">
+      <div class="rowline" style="padding:6px 4px;font-size:10px"><span>音效</span><b style="color:var(--green)">ON</b></div>
+      <div class="rowline" style="padding:6px 4px;font-size:10px"><span>震动</span><b style="color:var(--green)">ON</b></div>
+      <div class="rowline" style="padding:6px 4px;font-size:10px"><span>弹道预测点列</span><b style="color:var(--green)">ON</b></div>
+      <div class="rowline" style="padding:6px 4px;font-size:10px;border-bottom:0"><span>明亮主题</span><b style="color:rgba(255,255,255,.3)">OFF</b></div>
+    </div>
+    <div class="btn gold" style="margin:2px 14px 5px;padding:7px;font-size:10.5px">继 续</div>
+    <div class="btn ghost" style="margin:2px 14px 4px;padding:6px;font-size:9.5px">重新开始本关</div>
+    <div class="btn ghost" style="margin:2px 14px;padding:6px;font-size:9.5px">返回选关</div>
+  </div></div>
+</div><div class="cap">07 暂停 / 设置<small>主循环真停 + 4 项开关；「弹道预测点列」必须可关</small></div></div>
+
+<!-- ───────── 8 通关结算 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div class="hud" style="opacity:.3">
+    <div><span class="k">关卡 1</span><span class="v">爱心初动</span></div>
+    <div style="text-align:center"><span class="k">剩余发射</span><span class="v y">● ● <i style="font-style:normal;color:rgba(255,255,255,.28)">○</i></span></div>
+    <div style="text-align:right"><span class="k">分数</span><span class="v">3,470</span></div>
+  </div>
+  <div class="ovl" style="background:rgba(8,8,22,.62)"><div class="box" style="border-color:rgba(255,217,61,.32)">
+    <div class="ttl" style="color:var(--yellow)">完 关 !</div>
+    <div class="sub">LEVEL 1 CLEARED</div>
+    <div class="stars"><i style="color:var(--yellow)">★</i><i style="color:var(--yellow)">★</i><i>★</i></div>
+    <div class="mnum">
+      <div><b>3,470</b>本关得分</div>
+      <div><b style="color:var(--cyan)">×12</b>最高连击</div>
+      <div><b style="color:#7BEFC0">2</b>剩余发射</div>
+    </div>
+    <div style="font-size:8.5px;color:rgba(255,255,255,.5);margin-bottom:8px">
+      超过 <b style="color:var(--yellow)">76%</b> 的玩家 · 距三星还需将耗时压到 <b style="color:var(--cyan)">starTimes[0]</b> 以内（v2 按耗时评星）
+    </div>
+    <div class="btn gold" style="padding:8px">下一关 ▸</div>
+    <div style="display:flex;gap:5px;margin:0 16px">
+      <div class="btn ghost" style="flex:1;margin:0;padding:6px;font-size:9.5px">分享 ★</div>
+      <div class="btn ghost" style="flex:1;margin:0;padding:6px;font-size:9.5px">重玩</div>
+    </div>
+  </div></div>
+</div><div class="cap">08 通关结算<small>星星逐颗弹出 → 分数滚动 → 三星触发分享</small></div></div>
+
+<!-- ───────── 9 失败结算 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div class="hud" style="opacity:.3">
+    <div><span class="k">关卡 12</span><span class="v">偏置回廊</span></div>
+    <div style="text-align:center"><span class="k">剩余发射</span><span class="v" style="color:var(--red)"><i style="font-style:normal;color:rgba(255,255,255,.28)">○ ○ ○</i></span></div>
+    <div style="text-align:right"><span class="k">分数</span><span class="v">1,980</span></div>
+  </div>
+  <div class="ovl" style="background:rgba(8,8,22,.68)"><div class="box" style="border-color:rgba(255,138,122,.3)">
+    <div class="ttl r">球全部漏完</div>
+    <div class="sub">还差 3 个方块</div>
+    <div style="margin:12px 0;padding:9px;border-radius:10px;background:rgba(124,246,255,.08);border:1px solid rgba(124,246,255,.24)">
+      <div style="font-size:10.5px;font-weight:800;color:var(--cyan)">▶ 看广告 +1 球</div>
+      <div style="font-size:8px;color:rgba(255,255,255,.42);margin-top:2px">保留当前进度，继续本关</div>
+    </div>
+    <div class="btn gold" style="padding:8px">继 续 ▸</div>
+    <div class="btn ghost" style="padding:6px;font-size:9.5px">重新开始本关</div>
+    <div style="text-align:center;font-size:9px;color:rgba(255,255,255,.34);margin-top:4px;text-decoration:underline">返回选关</div>
+  </div></div>
+</div><div class="cap">09 失败结算<small>主 CTA 是广告复活；<b>不放「关闭」</b>，进度可视化「还差 3 个」</small></div></div>
+
+<!-- ───────── 10 排行榜 ───────── -->
+<div class="phone"><div class="scr">
+  <div class="sbar"><span>10:24</span><span>●●●● WiFi ▮</span></div>
+  <div style="display:flex;align-items:center;padding:6px 12px;font-size:12px;font-weight:800">
+    <span style="color:rgba(255,255,255,.55);font-weight:400;font-size:14px">‹</span>
+    <span style="flex:1;text-align:center;color:#fff">好友排行</span>
+    <span style="font-size:9px;color:var(--cyan)">周榜</span>
+  </div>
+  <div style="display:flex;gap:5px;padding:4px 14px 8px;font-size:9px">
+    <span style="flex:1;text-align:center;padding:5px;border-radius:8px;background:rgba(255,217,61,.16);color:var(--yellow);font-weight:700">总星数</span>
+    <span style="flex:1;text-align:center;padding:5px;border-radius:8px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5)">最高分</span>
+    <span style="flex:1;text-align:center;padding:5px;border-radius:8px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5)">最远关卡</span>
+  </div>
+  <div class="lb">
+    <div class="r"><span class="rk">1</span><span class="av"></span>阿May<span class="sc">★ 268</span></div>
+    <div class="r"><span class="rk">2</span><span class="av" style="background:linear-gradient(135deg,#FF8A7A,#F0514B)"></span>小杨同学<span class="sc">★ 254</span></div>
+    <div class="r"><span class="rk">3</span><span class="av" style="background:linear-gradient(135deg,#7BEFC0,#22C58B)"></span>BallMaster<span class="sc">★ 231</span></div>
+    <div class="r"><span class="rk">7</span><span class="av" style="background:linear-gradient(135deg,#FFD93D,#FF9F43)"></span>我<span class="sc">★ 42</span></div>
+    <div class="r" style="opacity:.4"><span class="rk">9</span><span class="av"></span>王小明<span class="sc">★ 38</span></div>
+    <div class="r" style="opacity:.4"><span class="rk">10</span><span class="av"></span>团团<span class="sc">★ 35</span></div>
+  </div>
+  <div style="margin:10px 16px 0;padding:8px 10px;border-radius:10px;background:rgba(255,217,61,.09);border:1px solid rgba(255,217,61,.22);font-size:9px;color:rgba(255,255,255,.72);line-height:1.6">
+    再过 <b style="color:var(--yellow)">2 关</b> 即可超越「BallMaster」<br>
+    <span style="color:rgba(255,255,255,.42)">本周日 24:00 结算 · 前 3 名得限定皮肤</span>
+  </div>
+  <div class="uibtn dim" style="margin-top:10px;padding:7px;font-size:10px">邀请好友参战</div>
+  <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:7.5px;color:rgba(255,255,255,.25)">仅展示微信好友 · 数据来自开放数据域</div>
+</div><div class="cap">10 好友排行榜<small>3 个榜切换 + 「差 2 关超越」的追赶式驱动</small></div></div>
+
+</div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="u4">
+<h2><span class="no">04</span>组件规范</h2>
+<div class="grid2">
+  <div class="card">
+    <h3 style="margin-top:0">4.1 按钮</h3>
+    <div class="grid3" style="gap:8px;margin-bottom:10px">
+      <div><div class="btn primary" style="text-align:center">主要</div></div>
+      <div><div class="btn ghost" style="text-align:center">次要</div></div>
+      <div><div class="btn" style="text-align:center;background:rgba(255,138,122,.16);color:#FF8A7A;border:1px solid rgba(255,138,122,.34)">危险</div></div>
+    </div>
+    <table style="margin-bottom:0">
+      <tbody>
+        <tr><td>高度</td><td>主 46 / 次 38 / 三级 32 pt</td></tr>
+        <tr><td>圆角</td><td>14pt（全尺寸一致，形成家族感）</td></tr>
+        <tr><td>字号</td><td>16 / 14 / 13pt，字重 700</td></tr>
+        <tr><td>主按钮</td><td>金渐变 <code>#FFD93D→#FF9F43</code>，文字 <code>#2A2140</code></td></tr>
+        <tr><td>按下态</td><td><code>scale(0.96)</code> + 亮度 <code>0.88</code>，120ms</td></tr>
+        <tr><td>命中区</td><td>视觉高度不变，<b>触摸热区上下各扩 8pt</b>（≥ 54pt）</td></tr>
+        <tr><td>禁用态</td><td>不透明度 0.35，<b>仍保持可点但只播「嗡」一声</b>（避免玩家狂点无反馈）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">4.2 游戏内元素</h3>
+    <table style="margin-bottom:0">
+      <tbody>
+        <tr><td><b>方块</b></td><td>v2 网格 <b>30 列 × 22 行</b>，单元格 11.7px（对应逻辑坐标）；<b>无缝衔接（inset 0）+ 2.2px 小圆角</b>（v2.2：相邻圆角相拼呈纽扣状，可爱但不留缝隙），纵向渐变 + 顶部高光 + 0.5px 淡黑描边（仅保证视觉边界）；墙壁行同样处理</td></tr>
+        <tr><td><b>墙壁</b></td><td>同尺寸，灰蓝 <code>#5A608C→#33375A</code>，1pt 白描边 12%；<b>不加任何彩色</b>以保证“打不掉”的读感</td></tr>
+        <tr><td><b>道具方块</b></td><td>v4 共七种，均可消除且带发光（<code>shadowBlur 8</code>）；<b>生效方式统一改为“掉落悬浮块”</b>（需求④）：消除后并不立即生效，而是从原坐标垂直掉落一个降透明度的悬浮块（<code>DROP_SPEED=150</code>），需玩家用横条接住才在<b>原坐标</b>真正发挥道具作用（落到轨道即作废）。① <b>分裂块 S</b> 青 <code>#7CF6FF→#00B8D4</code> 双叉，接住后原坐标一分为二；② <b>三分裂块 T</b> 紫 <code>#C77CFF→#8A2BE2</code> 三叉（需求⑧）；③ <b>生命块 L</b> 粉 <code>#FF9ECF→#F0368B</code> 白心形，剩余发射 +1；④ <b>爆炸块 X</b> 橙 <code>#FFB15A→#F0642B</code> 星芒，原坐标清空 <b>3×3</b>；⑤ <b>挡板块 P</b> 绿 <code>#9BE86B→#3FAE2E</code> 向上箭头，挡板满宽 <b>20s</b>（需求⑩，最后 3s 闪烁）；⑥ <b>快速球块 F</b> 黄 <code>#FFE07A→#F5A61E</code> 双箭头，原坐标一颗双倍速球（需求⑧）；⑦ <b>隐形块 G</b> 白蓝 <code>#E6ECFF→#9AA6CC</code> 虚线幽灵，方块区墙壁可穿 10s（底部墙行除外，需求⑨）。每关由 <code>injectProps()</code> 随机把 5%~10% 可消除块换为道具块（需求⑥）</td></tr>
+        <tr><td><b>小球</b></td><td>直径 11px（BALL_R=5.5），径向高光偏左上 35%/30%，光晕 6px</td></tr>
+        <tr><td><b>横条</b></td><td>v4 需求②：<b>默认宽 120px</b>（<code>PADDLE_W=120</code>，继续加宽让小球与道具悬浮块更容易接到）× 12px，圆角 6，金渐变 + 12pt 外发光；<b>不再显示三颗待发射小球</b>，剩余发射次数由顶部 HUD 圆点统一表达；接住时根据拖动方向施加 <code>BOUNCE_KICK=0.55</code> 的水平分量</td></tr>
+        <tr><td><b>缺口</b></td><td>v4 需求⑦：不再统一宽度，<b>每关自设缺口形式</b>（宽窄/单双/左右/多小口）：L1 宽单口(12)·L2 对称双口(6+6)·L3 偶左单口(6)·L4 大小双口(3+8)·L5 偶右单口(8)·L6 两窄口(3+3)·L7 偶左单口(6)·L8 三小口(2+2+2)·L9 偶右单口(8)·L10 非对称双口(3+8)。缺口越多/越宽越易进出（难度低），单窄偏口最难；具体难度以 balance-sim 回测为准</td></tr>
+                <tr><td><b>方块颜色</b></td><td>v4 需求①：可消除方块统一为<b>单一天蓝色</b>（<code>#9DB0FF→#5566DE</code>，<code>PALETTE.bricks</code> 仅 1 项），不再按坐标哈希循环取色；颜色不再携带任何语义，消除行为/得分与颜色无关。<b>有含义的只有形状与图标</b>：灰蓝铆钉块 = 不可消除墙壁；带发光图标的彩色块 = 七种道具（见上方「道具方块」，每种专属颜色）</td></tr>
+        <tr><td><b>滑动轨道</b></td><td>v4 需求③：取消旧“漏接线”，改为横条下方一条 <b>100% 竞技区宽的暗色同形轨道</b>（<code>rgba(255,255,255,.08)</code> 圆角 + 端点刻度），视觉上像“滑轨”；球落到轨道平面（<code>PADDLE_Y=DEATH_Y=487</code>）且不在横条上时直接判漏接（悬浮道具块落轨同样作废）；横条与轨道整体上移，距方块区约 150px</td></tr>
+        <tr><td><b>剩余发射</b></td><td>v2 统一 <b>3 颗</b>：用 <b>实心圆点</b> 而非数字（剩余 <code>● ● ●</code>，已用 <code>○</code> 的透明度 28%），一眼看清，无需读数字；v2.1 后仅顶部 HUD 显示，挡板不再带球</td></tr>
+        <tr><td><b>顶部 HUD</b></td><td>v3 四栏：关卡名 · <b>耗时</b>（首次发射才计时）· 剩余发射圆点 · <b>消除进度</b>。其中消除进度改为<b>横向进度条</b>（绿渐变 <code>#7BEFC0→#22C58B</code> + 百分比数字），取代旧纯文字</td></tr>
+        <tr><td><b>居中提示栏</b></td><td>v4 需求⑤：接住悬浮块生效后，在<b>方块区中央</b>弹出浮层提示（如“生命 +1”“分裂 ×2”“墙壁隐形 10s”），颜色取对应道具主色；多条消息上下堆叠（最多 4 条），先显示的先消失（FIFO），带淡入/上浮/淡出动画</td></tr>
+        <tr><td><b>结算面板</b></td><td>v3 星级仍按<b>耗时</b>评定（≤三星线 3★）；胜局展示<b>总分明细</b>：消除得分 + 剩余球×5 + 最大连击×10 + 耗时档（相对本关 starTimes 分 100/80/60/30 四档）；败局仅展示统计</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h3 style="margin-top:0">4.3 HUD 三段式</h3>
+    <p style="font-size:13px;color:var(--txt2)">
+      高 72pt，三段固定：<b>左 = 关卡名</b>（认知锚点）、<b>中 = 剩余发射</b>（最关键资源，居中且用圆点）、
+      <b>右 = 分数</b>（等宽数字防抖动）。第二行放耗时条（3pt，v2 以耗时作为星级主轴）。
+    </p>
+    <div class="note" style="margin-bottom:0;font-size:12.5px">
+      <span class="t">为什么分数放最右</span>
+      拇指从底部向上扫时，视觉落点是「中→右」。把资源（剩余发射）放中、把成就（分数）放右，
+      符合「先看我还剩什么，再看我赚了多少」的读序。
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">4.4 首次引导（FTUE）</h3>
+    <p style="font-size:13px;color:var(--txt2)">第 1 关强制 3 步手指引导，用半透明遮罩 + 挖孔：</p>
+    <ol style="font-size:13px;color:var(--txt2);margin-bottom:0">
+      <li>手指图标落在<b>空白区</b> + 文案「拖空白拉方向·松手发射」（v2 无方向虚线，实时预测点列自动显示）</li>
+      <li>松手后球飞行，追上球画箭头「碰墙壁会反弹」</li>
+      <li>球落回时手指图标落在<b>横条上</b>「拖横条接住→向左拖向左回弹」<span style="color:var(--txt3)">（接住 → 金色飘字 + 回弹音效；v2 核心教学）</span></li>
+    </ol>
+    <div class="note good" style="margin:10px 0 0;font-size:12.5px">
+      <span class="t">关键</span>引导不做成"点下一页"的轮播，<b>必须在真实局内边玩边学</b>。
+      第 3 步如果玩家没接住，引导不推进（v2 <b>接住回弹</b>就是主玩法本身，接不住就体会不到连续链的爽感）。
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="u5">
+<h2><span class="no">05</span>动效与转场</h2>
+<table>
+  <thead><tr><th style="width:20%">场景</th><th style="width:28%">动效</th><th style="width:14%">时长 / 曲线</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>启动 → 首页</td><td>标题从 <code>scale 0.86</code> 弹入，方块条逐个错峰落下</td><td>420ms / easeOutBack</td><td>建立“弹”的品牌调性</td></tr>
+    <tr><td>首页 → 游戏</td><td>卡片式放大转场（首页微缩预览区 → 全屏容器）</td><td>300ms / easeOutCubic</td><td>空间连续，避免硬切</td></tr>
+    <tr><td>方块入场</td><td>逐行逐列错峰 <code>scale 0.4→1</code></td><td>每块 260ms，行错 60ms / 列错 20ms</td><td>已在原型实现；同时让玩家预读布局</td></tr>
+    <tr><td>方块消除</td><td><b>先闪白 60ms → 再碎裂</b></td><td>白闪 60 / 碎裂 400ms</td><td>白闪是"命中确认"，碎裂是"结果"，两段比一段清晰得多</td></tr>
+    <tr><td>墙壁命中</td><td>整块 3% 缩放脉冲 + 白色高光 90ms</td><td>90ms / easeOut</td><td>已实现（<code>cell.flash</code>）；让玩家确认"是墙，不是没打中"</td></tr>
+    <tr><td>分裂</td><td>青色光环扩散 + 屏幕震动 3.5 + 两球分飞</td><td>400ms</td><td>全程最强反馈，是产品的"招牌时刻"</td></tr>
+    <tr><td>穿缺口</td><td>缺口处闪光环 + 短暂 <code>0.15×</code> 慢放</td><td>120ms</td><td><span class="tag p1">P1</span> 强调"进来了"，帮助建立空间感</td></tr>
+    <tr><td>接住球</td><td>横条压扁 <code>scaleY 0.7</code> 回弹 + 金色粒子</td><td>180ms</td><td>"接住了"的物理感</td></tr>
+    <tr><td>漏接</td><td>红色粒子上浮 + 屏幕震动 4 + 漏接线闪</td><td>300ms</td><td>负反馈明显但不punishing</td></tr>
+    <tr><td>通关</td><td>全场剩余方块同时碎裂 → 星星逐颗 <code>scale 0→1.25→1</code></td><td>每颗 260ms，间隔 180ms</td><td>星星必须逐颗，一次性出现会砍掉 60% 的爽感</td></tr>
+    <tr><td>失败</td><td>容器整体 <code>translateY 3px</code> 抖动 + 变暗</td><td>240ms</td><td>不要黑屏淡出，那会放大挫败</td></tr>
+    <tr><td>结算浮层</td><td>遮罩淡入 + 面板 <code>translateY 24→0</code></td><td>260ms / easeOutBack</td><td>浮层出现时<b>立即</b>停止音效 ducking 恢复</td></tr>
+  </tbody>
+</table>
+<div class="note" style="font-size:13px">
+  <span class="t">统一时序原则</span>
+  ① <b>所有游戏内动效不得阻塞输入</b>——玩家随时可以重新拖横条摆位/拉回弹方向，动效只是"锦上添花"；
+  ② 结算浮层的按钮延迟 400ms 才可点（防止误触跳过分数动画），但<b>点屏幕任意处可加速</b>；
+  ③ 曲线只用两条：<code>easeOutBack</code>（入场，带弹性）与 <code>easeOutCubic</code>（退场/位移），
+  不要为了"丰富"混用一堆曲线，那会让手感显得廉价。
+</div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="u6">
+<h2><span class="no">06</span>资源清单</h2>
+<p style="font-size:13px;color:var(--txt2)">
+  原则：<b>能用程序画的一律不出图</b>。方块、小球、横条、弹道线、粒子在原型里全是 Canvas 绘制，
+  正式版继续沿用（改为离屏预渲染），因此美术只需产出<b>图标与背景</b>。
+</p>
+<div class="grid2">
+  <div class="card">
+    <h3 style="margin-top:0">6.1 需美术出图</h3>
+    <table style="margin-bottom:0">
+      <thead><tr><th>资源</th><th class="num">规格</th><th class="num">数量</th></tr></thead>
+      <tbody>
+        <tr><td>App 图标</td><td class="num">1024²</td><td class="num">1</td></tr>
+        <tr><td>背景（暗 / 亮主题）</td><td class="num">1125 × 2001</td><td class="num">2</td></tr>
+        <tr><td>UI 底板（HUD / 浮层 / 面板）</td><td class="num">.9 图</td><td class="num">3</td></tr>
+        <tr><td>功能图标（暂停/设置/音效/震动/分享/排行/返回/广告）</td><td class="num">64²</td><td class="num">≈ 14</td></tr>
+        <tr><td>星星（大 / 小 / 灰）</td><td class="num">96 / 32</td><td class="num">3</td></tr>
+        <tr><td>锁 / 已解锁标记</td><td class="num">48²</td><td class="num">2</td></tr>
+        <tr><td>分享卡片底图</td><td class="num">500 × 400</td><td class="num">2</td></tr>
+        <tr><td>皮肤图标（P1）</td><td class="num">120²</td><td class="num">6</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">6.2 音频</h3>
+    <table style="margin-bottom:0">
+      <thead><tr><th>资源</th><th>格式</th><th class="num">时长</th></tr></thead>
+      <tbody>
+        <tr><td>shoot / brick / wall / split / catch / rebound / lose / open / win / fail / ui</td><td>mp3 <b>44.1kHz 64kbps 单声道</b></td><td class="num">合计 ≈ 2.9s</td></tr>
+        <tr><td>BGM（P1）</td><td>mp3，可循环，需无缝接缝</td><td class="num">60~90s</td></tr>
+      </tbody>
+    </table>
+    <div class="note warn" style="margin:10px 0 0;font-size:12.5px">
+      <span class="t">音频的两个硬约束</span>
+      ① 微信 iOS 上 <code>InnerAudioContext</code> <b>首次播放有 100~300ms 延迟</b>，必须在游戏启动时
+      预创建实例并播一次静音完成加载；<br>
+      ② 高频音效（brick / wall）用实例池轮转，<b>不要每次 <code>new InnerAudioContext</code></b>，
+      否则会内存泄漏并出现爆音。
+    </div>
+  </div>
+</div>
+<div class="kpi" style="margin-top:14px;display:flex;justify-content:center;gap:36px;padding:14px">
+  <div><div class="n" style="color:var(--cyan)">≈ 1.6</div><div class="l">美术出图（人日）</div></div>
+  <div><div class="n" style="color:var(--yellow)">≈ 1.2</div><div class="l">MB 预计图片包体</div></div>
+  <div><div class="n" style="color:var(--green)">≈ 0.6</div><div class="l">MB 音频包体</div></div>
+  <div><div class="n" style="color:#8FA0FF">&lt; 2.5</div><div class="l">MB 主包总量</div></div>
+</div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="u7">
+<h2><span class="no">07</span>落地注意事项</h2>
+<table>
+  <thead><tr><th style="width:20%">事项</th><th style="width:38%">要求</th><th>为什么</th></tr></thead>
+  <tbody>
+    <tr><td><b>主题色一致性</b></td><td>所有色值从 <code>config.js</code> 的 <code>PALETTE</code> 取，禁止在渲染代码里硬写十六进制</td><td>原型阶段已经出现同一红色在 3 处略有差异的情况，正式版必须单一来源</td></tr>
+    <tr><td><b>等宽数字</b></td><td>分数、倒计时、角度一律用等宽数字或手动 <code>letterSpacing</code></td><td>分数从 999→1000 时字宽变化会让 HUD 抖动</td></tr>
+    <tr><td><b>安全区</b></td><td>HUD 下移 <code>safeArea.top</code>；漏接线与提示文字上提避开 Home Indicator</td><td>iPhone 刘海 / 安卓挖孔会遮挡 HUD；底部手势区会误触</td></tr>
+    <tr><td><b>横条可点区</b></td><td>视觉高 12pt，触摸热区扩到 <b>32pt</b>（上下各 10）</td><td>12pt 远低于拇指最小可点尺寸（≈ 44pt），玩家会"抓不住横条"</td></tr>
+    <tr><td><b>弹道预测点列可关闭</b></td><td>设置里提供开关（原型已实现 <code>showAim</code>）；v2 默认只保留点列，<b>方向虚线已删</b></td><td>对硬核玩家它削弱挑战；对低端机它省 1800 次模拟</td></tr>
+    <tr><td><b>色彩不可作为唯一信息</b></td><td>「可入缺口 / 撞墙壁」除颜色外<b>必须有 ✕ 图标 + 文案</b>（原型已实现）</td><td>色觉障碍与户外强光下只靠颜色会失效</td></tr>
+    <tr><td><b>方块形状区分</b></td><td>分裂块除了青色还要有 <b>✦ 符号</b>，墙壁除了灰色还要有 <b>描边 + 高光纹理</b></td><td>同上，冗余编码（颜色 + 形状）才鲁棒</td></tr>
+    <tr><td><b>低端机降级</b></td><td>三级开关：拖尾 → 同屏球上限 16→12 → 粒子上限 200→80 → 锁 30fps</td><td>v2 实测平衡仿真峰值 4.3 球/屏（分裂链），但压测上限 16，低端机需预留余量</td></tr>
+    <tr><td><b>浮层也画在 Canvas</b></td><td>结算 / 暂停浮层不用 DOM（小游戏无 DOM），按本稿样式程序绘制</td><td>原型已按此实现，直接复用即可</td></tr>
+    <tr><td><b>分享卡片文案</b></td><td>「我在第 12 关拿了 3 星，你能打过吗？」+ 截图</td><td>带上<b>具体关卡与星级</b>的分享点击率显著高于通用文案</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <span class="t">本稿与原型的关系</span>
+  本稿的所有尺寸、间距、色值都对应 <code>design/js/prototype-data.js</code> 与 <code>prototype-render.js</code> 的实际配置，
+  不是凭空画的图。建议流程：<b>先在 <a href="prototype.html">prototype.html</a> 里调好手感和数值 → 再把配色/字号搬到本稿 → 美术按本稿出图</b>。
+</div>
+</section>
+
+<footer>
+  弹弹消消乐 · 界面视觉稿 v4.0（v1→v2 变更见 specs/design-v2-changes.md）
+  &nbsp;|&nbsp; 配套：<a href="index.html">完整设计稿</a> · <a href="prototype.html">可玩交互原型</a>
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('#nav a[href^="#"]'));
+  var map = links.map(function (a) {
+    return { a: a, el: document.querySelector(a.getAttribute('href')) };
+  }).filter(function (o) { return o.el; });
+  function onScroll() {
+    var y = window.scrollY + 120, cur = map[0];
+    for (var i = 0; i < map.length; i++) if (map[i].el.offsetTop <= y) cur = map[i];
+    map.forEach(function (o) { o.a.classList.toggle('on', o === cur); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>

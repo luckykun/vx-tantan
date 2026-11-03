@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>弹弹消消乐 · 微信小游戏设计稿 v2.0</title>
+<link rel="stylesheet" href="css/doc.css">
+</head>
+<body>
+<div class="layout">
+
+<nav class="side" id="nav">
+  <div class="brand">弹弹<span>消消乐</span></div>
+  <div class="ver">设计稿 v2.0 · 2026-10</div>
+  <div class="grp">交付物</div>
+  <a class="ext" href="prototype.html">▶ 可玩交互原型</a>
+  <a class="ext" href="ui-mockups.html">▶ 界面视觉稿</a>
+  <div class="grp">设计正文</div>
+  <a href="#s1">01 需求确认结论</a>
+  <a href="#s2">02 产品定位</a>
+  <a href="#s3">03 核心玩法闭环</a>
+  <a href="#s4">04 屏幕分区与尺寸</a>
+  <a href="#s5">05 元素设计规范</a>
+  <a href="#s6">06 交互手势</a>
+  <a href="#s7">07 游戏状态机</a>
+  <a href="#s8">08 物理与规则细则</a>
+  <a href="#s9">09 关卡设计</a>
+  <a href="#s10">10 数值 / 计分 / 星级</a>
+  <a href="#s11">11 仿真配平报告</a>
+  <a href="#s12">12 音效 / 特效 / 震动</a>
+  <a href="#s13">13 技术方案</a>
+  <a href="#s14">14 开发排期</a>
+  <a href="#s15">15 数据埋点</a>
+  <a href="#s16">16 待确认问题</a>
+</nav>
+
+<main>
+<h1 class="doc">弹弹消消乐 · 游戏设计稿</h1>
+<p class="lead">
+  面向微信小程序（小游戏）的休闲弹射消除游戏。本设计稿基于与需求方的 4 项关键机制确认结论撰写，
+  包含完整的玩法规则、屏幕尺寸规范、交互手势、物理模型、关卡数据结构、数值配平（附无头仿真实测数据）、
+  技术选型与开发排期。配套交付<b>可直接试玩的 Canvas 高保真原型</b>与<b>全套界面视觉稿</b>。
+</p>
+
+<div class="grid4" style="margin-bottom:30px">
+  <div class="kpi c"><div class="n">30×22</div><div class="l">竞技区网格（列×行）</div></div>
+  <div class="kpi y"><div class="n">±9°</div><div class="l">缺口入射角容差（L1，v6 收窄后）</div></div>
+  <div class="kpi g"><div class="n">65~80%</div><div class="l">仿真通关率（3 关 · 新手档）</div></div>
+  <div class="kpi p"><div class="n">54~123s</div><div class="l">胜局平均耗时（连续回弹制）</div></div>
+</div>
+
+<!-- ============================== 01 ============================== -->
+<section id="s1">
+<h2><span class="no">01</span>需求确认结论</h2>
+<p>本文档描述 <b>v2 玩法</b>（变更决策记录见 <code>specs/design-v2-changes.md</code>）。v1 的回合制 / 9 列网格 / 剩余次数评星 / 瞄准虚线等设定已被整体取代，涉及处均已改写。</p>
+<p>原始需求经 v1 确认 + v2 复述，最终结论如下（后续所有设计均以此为准）：</p>
+<table>
+  <thead><tr><th style="width:15%">议题</th><th style="width:32%">确认结论</th><th>设计影响</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>横条行为</b></td>
+      <td>横条是<b>挡板</b>，需要接球（非纯发射器）</td>
+      <td>横条具备<b>双重身份</b>：既是发射点，又是回弹工具。拖空白处瞄准 / 发射，拖横条本身摆位；球落回时接住即沿拖动方向弹回去继续消除。</td>
+    </tr>
+    <tr>
+      <td><b>接住回弹</b><br><small style="color:var(--cyan)">v2 改</small></td>
+      <td>挡板<b>接住球后不回收成弹药，而是按当时拖动方向继续回弹</b>，球持续消除；球漏完且弹药耗尽才结束</td>
+      <td>删除 v1「接住转弹药 / 回合结算」整套机制。回弹注入横向分量 <code>vx += paddle.vx × BOUNCE_KICK(0.55)</code>，静止接住则近似原路竖直回弹。<b>「控住拖动方向」成为核心手感</b>。</td>
+    </tr>
+    <tr>
+      <td><b>方块数量</b><br><small style="color:var(--cyan)">v2 改</small></td>
+      <td><b>网格改 30 列</b>（原 9 列），方块要很多才有意思；不加血量，保留<b>分裂道具方块</b></td>
+      <td>方块总数从 v1 的 26/37/49 提升到 <b>101/167/212</b>（全高度散布）。普通方块命中 1 次即消除；难度靠「3 次发射 + 缺口造型 + 停滞开底」，不靠血量堆叠。</td>
+    </tr>
+    <tr>
+      <td><b>关卡模式</b><br><small style="color:var(--cyan)">v2 改</small></td>
+      <td><b>关卡制 + 每关 3 颗球发射机会 + 按耗时评星</b></td>
+      <td>发射第 1 颗后可立即发下一颗（允许同屏多波）。<b>星级按通关耗时评定</b>（废弃 v1「剩余次数比例」评星）；天然适配关卡解锁、星级收集与分享裂变。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note warn">
+  <span class="t">需求原文的一处歧义与本文的处理</span>
+  「横条处于水平居中」理解为<b>横条水平放置且位于屏幕底部居中位置</b>（而非“横条在水平方向上可居中移动”）。
+  瞄准时横条不跟随手指 X（否则「横条中心 → 手指」的连线会永远竖直、无法斜射），
+  因此保留<b>双模式手势</b>：拖空白处 = 瞄准/发射，拖横条本身 = 摆位/接管回弹（详见 <a href="#s6">06 交互手势</a>）。
+</div>
+</section>
+
+<!-- ============================== 02 ============================== -->
+<section id="s2">
+<h2><span class="no">02</span>产品定位与核心体验</h2>
+<div class="grid2">
+  <div class="card">
+    <h4 style="margin-top:0">一句话定位</h4>
+    <p style="font-size:16px;color:#fff;margin-bottom:8px">「算好角度，一杆清台」——<br>用手指弹射小球，在封闭容器里打出连锁反弹的爽快感。</p>
+    <p style="font-size:13px;color:var(--txt2);margin:0">
+      品类：休闲益智 / 弹射消除。对标：<i>Bricks n Balls</i>、<i>弹球消砖块</i>、<i>Ballz</i>。
+      差异化：<b>封闭容器 + 单一缺口</b>——球必须"钻进去"，进去后在密闭空间里疯狂反弹，
+      比开放式的打砖块更有"台球 / 弹珠台"的策略感与观赏性。
+    </p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0">三层体验目标</h4>
+    <table style="margin:0">
+      <tbody>
+        <tr><td style="width:26%"><b>思考</b></td><td>弹道预测线让"算角度"变成可视化推理，而非瞎猜</td></tr>
+        <tr><td><b>操作</b></td><td>接球环节提供动作紧张感，把"策略游戏"拉回"手感游戏"</td></tr>
+        <tr><td><b>爆发</b></td><td>分裂块让球数指数增长，满屏弹球 + 连击飘字 = 核心爽点</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h3>目标用户与场景</h3>
+<ul>
+  <li><b>主力人群</b>：18~40 岁微信休闲用户，女性占比预计偏高（消除类品类特征）。</li>
+  <li><b>使用场景</b>：碎片时间（通勤、排队、睡前），单局 <b>54~123 秒</b>（v2 连续回弹制，胜局仿真实测），随时可中断续玩。</li>
+  <li><b>留存钩子</b>：关卡星级收集 → 每日挑战关 → 好友排行榜 → 卡关时"看广告 +1 颗球"。</li>
+</ul>
+
+<h3>MVP 范围</h3>
+<table>
+  <thead><tr><th style="width:8%">优先级</th><th style="width:34%">功能</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tag p0">P0</span></td><td>核心玩法全流程</td><td>瞄准 / 发射 / 反弹 / 消除 / 分裂 / 接球 / 胜负判定</td></tr>
+    <tr><td><span class="tag p0">P0</span></td><td>关卡系统</td><td>30 关起步，关卡选择页、星级存档、解锁进度</td></tr>
+    <tr><td><span class="tag p0">P0</span></td><td>基础界面</td><td>启动页 / 主页 / 关卡选择 / 游戏页 / 暂停 / 结算</td></tr>
+    <tr><td><span class="tag p0">P0</span></td><td>手感三件套</td><td>弹道预测线、粒子特效、音效 + 震动反馈</td></tr>
+    <tr><td><span class="tag p1">P1</span></td><td>微信能力接入</td><td>登录、分享卡片、好友排行榜（开放数据域）、游戏圈</td></tr>
+    <tr><td><span class="tag p1">P1</span></td><td>道具方块扩展</td><td>炸弹（范围消除）、加球、穿透、星币</td></tr>
+    <tr><td><span class="tag p1">P1</span></td><td>复活 / 商业化</td><td>激励视频：+2 次发射机会、复活续关</td></tr>
+    <tr><td><span class="tag p2">P2</span></td><td>无尽模式 / 每日挑战</td><td>方块逐行下压的生存玩法，冲榜用</td></tr>
+    <tr><td><span class="tag p2">P2</span></td><td>皮肤与装扮</td><td>小球皮肤、挡板皮肤、方块主题（换色即换皮，成本低）</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ============================== 03 ============================== -->
+<section id="s3">
+<h2><span class="no">03</span>核心玩法闭环</h2>
+
+<div class="flow">
+  <span class="step">摆位<br><small style="font-weight:400;opacity:.7">拖横条选择发射点</small></span><span class="arr">→</span>
+  <span class="step">瞄准<br><small style="font-weight:400;opacity:.7">弹道预测点列</small></span><span class="arr">→</span>
+  <span class="step hot">发射<br><small style="font-weight:400;opacity:.7">扣 1 颗球</small></span><span class="arr">→</span>
+  <span class="step">穿缺口入容器</span><span class="arr">→</span>
+  <span class="step">反弹消除<br><small style="font-weight:400;opacity:.7">命中即消除</small></span><span class="arr">→</span>
+  <span class="step hot">触发分裂<br><small style="font-weight:400;opacity:.7">1 球 → 2 球</small></span><span class="arr">→</span>
+  <span class="step">从缺口逸出</span><span class="arr">→</span>
+  <span class="step hot">接住回弹<br><small style="font-weight:400;opacity:.7">拖横条接住，沿拖动方向弹回</small></span><span class="arr">↺</span>
+  <span class="step">球漏完且弹药耗尽 → 结算</span>
+</div>
+
+<div class="grid3">
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--cyan)">① 连续回弹链</h4>
+    <p style="font-size:13px;margin:0">
+      开局发 1 球 → 击中分裂块变 2 球 → 球从缺口逸出后拖横条<b>接住并沿拖动方向弹回</b>，
+      球<b>不因接住而消失</b>，而是继续消除。一条“接住→回弹→再消除→再逸出→再接住”的回弹链
+      可以把一颗球的火力放到最大，<b>把「策略锁定」与「动作回弹」接成一个大动作流</b>。
+    </p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--yellow)">② 失败压力与收敛</h4>
+    <p style="font-size:13px;margin:0">
+      失败由<b>3 颗球全部漏完且发射机会耗尽</b>触发。两道收敛保险：
+      <b>连续 22s 无消除</b>自动开底排空活球；<b>关卡硬超时 240s</b>强制开底。
+      保证无重力封闭容器里不会出现“球永远绕不出来”的死锁。
+    </p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--green)">③ 单局节奏</h4>
+    <p style="font-size:13px;margin:0">
+      v2 将“每关 3 球 + 回弹链”作为节奏引擎：球全程有块可打（散布布局），
+      胜局均耗时 <b>54~123s</b>（仿真实测）；三星线取熟练中位、二星线取新手中位。
+      飞行期间玩家不闲着（要拖横条接住回弹），有明显空窗。
+    </p>
+  </div>
+</div>
+
+<h3>胜利 / 失败条件</h3>
+<table>
+  <thead><tr><th style="width:14%">结果</th><th style="width:36%">触发条件</th><th>后续流程</th></tr></thead>
+  <tbody>
+    <tr><td><b style="color:var(--green)">通关</b></td><td>场上所有可消除方块（含分裂块）清空（即时判定，不等球落完）</td><td>结算页：耗时星级 + 得分 + 消除数/最长回弹链 → 「下一关」/「重玩」/「分享炫耀」</td></tr>
+    <tr><td><b style="color:var(--red)">失败</b></td><td>3 次发射机会用完 <b>且</b> 同屏球全部漏完，方块仍有剩余</td><td>失败页：显示剩余方块数 → 「重新挑战」/「看广告 +1 球」/「返回选关」</td></tr>
+    <tr><td><b style="color:var(--txt2)">中断</b></td><td>暂停 / 切后台（<code>onHide</code>）</td><td>自动暂停主循环并保存当前局面，回前台可继续（防切屏作弊：暂停期间不计入单局时长）</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ============================== 04 ============================== -->
+<section id="s4">
+<h2><span class="no">04</span>屏幕分区与尺寸规范</h2>
+<p>
+  设计基准：<b>375 × 667 pt</b>（等同小程序 <code>750rpx</code> 设计稿的一半），
+  实际渲染按 <code>windowWidth / windowHeight</code> 等比缩放并乘 <code>pixelRatio</code>。
+  <b>30 列是规格，px 只是推导结果</b>（整条推导链见 <code>specs/design-v2-changes.md</code> 第三节）。以下为原型实测数值：
+</p>
+
+<div class="grid2">
+  <div>
+    <table>
+      <thead><tr><th>区块</th><th class="num">Y 范围</th><th class="num">高度</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>状态栏 + HUD</td><td class="num">0 ~ 72</td><td class="num">72</td><td>关卡名、得分、<b>耗时</b>、剩余发射、进度、暂停</td></tr>
+        <tr><td><b>竞技区（容器）</b></td><td class="num">80 ~ 337.4</td><td class="num">257.4</td><td>30 列 × 22 行，格宽 11.7</td></tr>
+        <tr><td>└ 方块布局区</td><td class="num">80 ~ 325.7</td><td class="num">245.7</td><td>第 0~20 行，全高度散布方块 / 墙壁</td></tr>
+        <tr><td>└ 底部墙壁行</td><td class="num">325.7 ~ 337.4</td><td class="num">11.7</td><td>第 21 行，全墙壁 + 缺口</td></tr>
+        <tr><td><b>接球区</b></td><td class="num">337.4 ~ 667</td><td class="num">329.6</td><td>球逸出后下落 / 回弹的空间（v2 大幅增高）</td></tr>
+        <tr><td>└ 横条（挡板）</td><td class="num">600 ~ 612</td><td class="num">12</td><td>宽 64，全圆头，可左右移动</td></tr>
+        <tr><td>└ 漏接线</td><td class="num">652</td><td class="num">—</td><td>球心越过即丢失（该球永久消失）</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>基础参数</th><th class="num">值</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td>左右安全边距</td><td class="num">12</td><td>容器外壁 x = 12 / 363</td></tr>
+        <tr><td>格子尺寸 CELL</td><td class="num">11.7</td><td>(375 − 12×2) ÷ 30</td></tr>
+        <tr><td>小球半径</td><td class="num">5.5</td><td>球径 11 ≈ 0.94 × CELL，与格宽同量级</td></tr>
+        <tr><td>小球直径 / 缺口宽</td><td class="num">11 / 58.5</td><td>L1 缺口经 v6 GAP_MAX_CELLS=5 收窄为 5 格（≈ 5.3 倍球径）</td></tr>
+        <tr><td>挡板宽 / 缺口宽</td><td class="num">120 / 58.5</td><td>挡板宽于缺口，配合耗时评星控制漏接张力</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <div class="wire">
+      <div class="zone" style="height:56px"><b>① HUD 信息栏</b> <i>y 0–72</i><br>关卡 · 得分 · <b>耗时</b> · 剩余发射 · 消除进度 · 暂停</div>
+      <div class="zone" style="height:180px;border-color:rgba(124,246,255,.45)">
+        <b>② 竞技区 / 容器</b> <i>y 80–337.4 · 30×22 格 · 格宽 11.7</i><br>
+        四周为不可见容器壁（反弹）<br>内部摆放：可消除方块 + 墙壁方块 + 分裂块（全高度散布）<br>
+        <span style="color:var(--cyan)">↓ 第 21 行 = 底部墙壁行 + 缺口（唯一进出口）</span>
+      </div>
+      <div class="zone" style="height:132px;border-color:rgba(255,217,61,.4)">
+        <b>③ 接球区</b> <i>y 337.4–667</i><br>
+        左右保留容器外壁（可打库边反弹）<br>
+        <span style="color:var(--yellow)">━ 横条挡板 y=600 宽 64（接住回弹）</span><br>
+        <span style="color:var(--red)">┄ 漏接线 y=652</span>
+      </div>
+    </div>
+    <div class="note" style="margin-top:14px">
+      <span class="t">异形屏适配</span>
+      HUD 顶部需叠加 <code>wx.getSystemInfoSync().statusBarHeight</code> 与
+      <code>safeArea.top</code>；底部漏接线需避开 <code>safeArea.bottom</code>（iPhone 全面屏 Home Indicator）。
+      做法：整块游戏区按 <b>宽度等比缩放</b>后垂直居中，多出的高度补给接球区（挡板随之下移），
+      保证竞技区网格始终是正方形不变形。
+    </div>
+  </div>
+</div>
+
+<h3>为什么缺口逐关递增收窄而不统一<span class="tag p0">关键决策</span></h3>
+<p>
+  球必须穿过缺口才能进入容器，因此<b>可瞄准角度存在硬性容差上限</b>。v2 采用<b>逐关递增收窄</b>（前宽后窄）：
+</p>
+<pre><code>入射容差角 = atan( (缺口宽 ÷ 2 − 球半径 − 1) ÷ 发射点到缺口上沿距离 256.1px )
+
+L1 缺口 12 格（140.4px）：atan((70.2 − 5.5 − 1) ÷ 256.1) = ±14.0°  → 新手宽缺口，易上手
+L2 缺口 10 格（117.0px）：atan((58.5 − 5.5 − 1) ÷ 256.1) = ±11.5°  → 需主动摆位
+L3 缺口 8 格（93.6px）： atan((46.8 − 5.5 − 1) ÷ 256.1) = ±8.9°   → 窄口，重心靠回弹链
+
+（v1 统一 3 格（117px）但格宽 39 → 容差 ±22.2°；v2 格宽变小使相同格数的绝对宽度变小）</code></pre>
+<div class="note good">
+  <span class="t">配套设计：把"限制"变成"玩法"</span>
+  弹道预测点列用<b>颜色</b>实时反馈本次发射能否命中可消块——
+  <span style="color:var(--cyan)">青色</span> = 可命中，
+  <span style="color:var(--red)">红色 + ✕ 标记</span> = 无命中（慎发）。
+  需求方 v2 拍板<b>去掉“挡板中心→手指”的方向虚线</b>，只保留一条真实弹道预测点列（见 <a href="#s6">06</a>）。同时接球区<b>保留左右外壁</b>，允许"打库边"折射入缺口。
+</div>
+</section>
+
+<!-- ============================== 05 ============================== -->
+<section id="s5">
+<h2><span class="no">05</span>元素设计规范</h2>
+
+<h3>方块类型</h3>
+<table>
+  <thead><tr><th style="width:5%">代号</th><th style="width:15%">名称</th><th style="width:8%">优先级</th><th style="width:13%">视觉</th><th style="width:14%">行为</th><th>设计说明</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>.</code></td><td><b>空格</b></td><td><span class="tag p0">P0</span></td>
+      <td>—</td><td>球自由通过</td><td>构成关卡的呼吸感与通道</td>
+    </tr>
+    <tr>
+      <td><code>B</code></td><td><b>可消除方块</b></td><td><span class="tag p0">P0</span></td>
+      <td><span class="sw" style="background:linear-gradient(180deg,#FF8A7A,#F0514B)"></span>圆角≈3，渐变 + 顶部高光</td>
+      <td>命中 1 次即消除，球按法线反弹</td>
+      <td>无血量数字。格宽仅 11.7px，圆角相应缩小（否则糊成一团）；6 色循环取色，保证上百个方块色彩均匀又不呆板。</td>
+    </tr>
+    <tr>
+      <td><code>W</code></td><td><b>墙壁方块</b></td><td><span class="tag p0">P0</span></td>
+      <td><span class="sw" style="background:linear-gradient(180deg,#5A608C,#33375A)"></span>圆角 3，金属灰</td>
+      <td>不可消除，完美镜面反弹</td>
+      <td>关卡造型的主要手段。<b>底部第 21 行全部为墙壁</b>，仅留缺口。v2 散布布局仅在 L2/L3 少量内部墙柱（分裂限制在 0~2 个、不用顶棚连续墙），避免陷阱口袋拉低新手通关率。</td>
+    </tr>
+    <tr>
+      <td><code>S</code></td><td><b>分裂道具方块</b></td><td><span class="tag p0">P0</span></td>
+      <td><span class="sw" style="background:linear-gradient(180deg,#7CF6FF,#00B8D4)"></span>青色 + 外发光 + 「⑂」图标</td>
+      <td>可消除；消除后命中的球<b>分裂为 2 颗</b></td>
+      <td>核心彩蛋。v2 由于 3 球 + 回弹链，分裂数量受限（每关 0~2 个）；带 <code>shadowBlur</code> 呼吸光效，让玩家一眼识别。</td>
+    </tr>
+    <tr>
+      <td><code>X</code></td><td>炸弹方块</td><td><span class="tag p1">P1</span></td>
+      <td>橙红 + 引信动画</td><td>消除后 3×3 范围爆消</td><td>救场用，制造高光时刻</td>
+    </tr>
+    <tr>
+      <td><code>+</code></td><td>加球方块</td><td><span class="tag p1">P1</span></td>
+      <td>绿色 + 「+1」</td><td>消除后直接手上球 +1</td><td>比分裂更稳定的补球手段</td>
+    </tr>
+    <tr>
+      <td><code>★</code></td><td>星币方块</td><td><span class="tag p1">P1</span></td>
+      <td>金色 + 星星</td><td>消除后 +高额分数</td><td>引导玩家冒险打边角</td>
+    </tr>
+    <tr>
+      <td><code>P</code></td><td>穿透方块</td><td><span class="tag p2">P2</span></td>
+      <td>紫色半透明</td><td>球穿过不反弹，消除沿途方块</td><td>改变弹道逻辑，需额外测试</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>小球与横条</h3>
+<div class="grid2">
+  <div class="card">
+    <h4 style="margin-top:0">小球</h4>
+    <table style="margin:0">
+      <tbody>
+        <tr><td style="width:34%">半径</td><td><b>5.5px</b>（球径 11 ≈ 0.94 × CELL）</td></tr>
+        <tr><td>速度</td><td><b>500 px/s</b>（方块区/竞技区内匀速，无重力；v6 需求④提速）</td></tr>
+        <tr><td>接球区速度</td><td><b>420 px/s</b>（×0.84，方块区下方，给玩家接球反应时间；v7 需求④）</td></tr>
+        <tr><td>视觉</td><td>径向渐变白→浅蓝，<code>shadowBlur</code> 青色辉光</td></tr>
+        <tr><td>拖尾</td><td>保留最近 8 个位置，半径与透明度线性衰减</td></tr>
+        <tr><td>同屏上限</td><td><b>16 颗</b>（超出时分裂块只消除不分裂，并飘字提示"已达上限"）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0">横条（挡板）</h4>
+    <table style="margin:0">
+      <tbody>
+        <tr><td style="width:34%">尺寸</td><td><b>64 × 12px</b>，全圆头</td></tr>
+        <tr><td>可移动范围</td><td>中心 x ∈ [44, 331]（夹在容器内壁内）</td></tr>
+        <tr><td>跟随方式</td><td>手指 X → 目标位置，插值系数 <code>min(1, dt×22)</code>（≈5ms 到位，跟手但不生硬）</td></tr>
+        <tr><td>接住回弹</td><td><b>接住不回收，而是沿拖动方向弹回</b>：<code>vx += paddle.vx × 0.55</code>，钳制 ±78°（v2 核心）</td></tr>
+        <tr><td>视觉</td><td>金黄→橙渐变 + 外发光 + 顶部高光条</td></tr>
+        <tr><td>初始状态</td><td><b>水平居中</b>（需求约定）</td></tr>
+        <tr><td>状态提示</td><td>挡板下方显示剩余发射机会（小圆点，v2：最多 3 个）</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h3>色彩规范</h3>
+<table>
+  <thead><tr><th>用途</th><th>色值</th><th>预览</th><th>用途</th><th>色值</th><th>预览</th></tr></thead>
+  <tbody>
+    <tr><td>背景渐变起</td><td><code>#141634</code></td><td><span class="sw" style="background:#141634"></span></td><td>方块 · 红</td><td><code>#F0514B</code></td><td><span class="sw" style="background:#F0514B"></span></td></tr>
+    <tr><td>背景渐变止</td><td><code>#241548</code></td><td><span class="sw" style="background:#241548"></span></td><td>方块 · 黄</td><td><code>#F5B91E</code></td><td><span class="sw" style="background:#F5B91E"></span></td></tr>
+    <tr><td>容器描边</td><td><code>rgba(255,255,255,.12)</code></td><td><span class="sw" style="background:#3a3d55"></span></td><td>方块 · 绿</td><td><code>#22C58B</code></td><td><span class="sw" style="background:#22C58B"></span></td></tr>
+    <tr><td>主强调 / 挡板</td><td><code>#FFD93D → #FF9F43</code></td><td><span class="sw" style="background:linear-gradient(90deg,#FFD93D,#FF9F43)"></span></td><td>方块 · 蓝</td><td><code>#2F7BE8</code></td><td><span class="sw" style="background:#2F7BE8"></span></td></tr>
+    <tr><td>瞄准成功 / 分裂</td><td><code>#7CF6FF</code></td><td><span class="sw" style="background:#7CF6FF"></span></td><td>方块 · 紫</td><td><code>#8B4CF0</code></td><td><span class="sw" style="background:#8B4CF0"></span></td></tr>
+    <tr><td>警告 / 瞄准失败</td><td><code>#FF8A7A</code></td><td><span class="sw" style="background:#FF8A7A"></span></td><td>方块 · 粉</td><td><code>#F0559F</code></td><td><span class="sw" style="background:#F0559F"></span></td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <span class="t">无障碍与辨识度</span>
+  墙壁（灰蓝 #5A608C）与可消除方块（高饱和糖果色）在<b>饱和度上差 3 倍以上</b>，色弱玩家也能区分。
+  分裂块除颜色外还有<b>独立图标 + 外发光</b>双冗余编码。所有关键反馈同时具备「视觉 + 音效 + 震动」三通道。
+</div>
+</section>
+
+<!-- ============================== 06 ============================== -->
+<section id="s6">
+<h2><span class="no">06</span>交互手势设计</h2>
+<p>全程<b>单指操作</b>，无按钮依赖。v2 把瞄准/发射/回弹/接球<b>合并到单一 PLAY 态内并行</b>（球飞行时也可随时拉下一条瞄准线并发射下一颗）。核心矛盾仍是横条既要当"发射基准"又要当"回弹工具"，解法还是<b>按触摸落点区分双模式</b>（不再依赖 AIM/FLY 互斥阶段）：</p>
+
+<table>
+  <thead><tr><th style="width:14%">触摸落点</th><th style="width:16%">前置条件</th><th style="width:18%">模式</th><th>行为</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="3"><b>PLAY 态</b><br><small style="color:var(--txt3)">球飞行中同样适用</small></td>
+        <td>横条本体（含热区扩展）</td><td><b style="color:var(--yellow)">摆位/接管</b></td>
+        <td>横条跟随手指水平移动（记录按下时的抓取偏移，保证"抓住不跳"）；<b>不显示虚线、松手不发射</b>。用于选发射点或准备接球回弹。</td></tr>
+    <tr><td>屏幕空白 + 还有弹药</td><td><b style="color:var(--cyan)">瞄准模式</b></td>
+        <td>横条<b>保持不动</b>；实时绘制<b>真实弹道预测点列</b>（无方向虚线）+ 角度读数；<b>松手立即发射</b>，扣 1 颗球。</td></tr>
+    <tr><td>屏幕空白 + 无弹药</td><td><b style="color:var(--yellow)">接管挡板</b></td>
+        <td>弹药用完后拖空白处直接接管挡板（无偏移、指哪到哪），便于紧急接住回弹。</td></tr>
+    <tr><td><b>结算阶段</b></td><td>按钮区域</td><td>点击</td><td>下一关 / 重玩 / 分享 / 返回选关</td></tr>
+  </tbody>
+</table>
+
+<div class="grid2">
+  <div class="card">
+    <h4 style="margin-top:0">瞄准辅助反馈（降低挫败感的关键）</h4>
+    <ul style="margin-bottom:0;font-size:13px">
+      <li><b>弹道预测点列</b>：与真实物理<b>同一套规则</b>步进模拟；渐隐点列 + 首个命中方块处画双圆圈。<b>v2 已删除“挡板中心→手指”的流动虚线</b>（需求方拍板“只应有一条线”），只剩这一条真实弹道预测。</li>
+      <li><b>颜色反馈</b>：<span style="color:var(--cyan)">青色</span>=可命中可消块，<span style="color:var(--red)">红色 + ✕</span>=无命中（慎发）。</li>
+      <li><b>角度读数</b>：挡板下方显示 <code>+18°</code> 与文案「可命中」/「无命中(慎发)」。</li>
+      <li><b>失败预标记</b>：预测无命中时，在撞击点画红色 ✕。</li>
+      <li><b>手指锚点</b>：手指位置画双环，明确"我在控制这里"。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0">手感细节</h4>
+    <ul style="margin-bottom:0;font-size:13px">
+      <li><b>热区扩展</b>：横条实际高 12px，触摸热区向上下左右扩展（移动端最小可点击 44px 规范）。</li>
+      <li><b>抓取偏移</b>：摆位模式记录 <code>grabDX = 手指x − 横条中心x</code>，避免横条瞬间跳到手指下方。</li>
+      <li><b>接管无偏移</b>：无弹药时紧急情况要"指哪到哪"，此时跳变可接受且必要。</li>
+      <li><b>插值跟随</b>：横条用 <code>dt×22</code> 插值，视觉顺滑；其拖动速度就是接住回弹时注入的横向分量来源。</li>
+      <li><b>误触保护</b>：摆位模式下松手<b>不发射</b>，玩家可反复调整后再去空白处瞄准。</li>
+      <li><b>角度限制</b>：与竖直方向夹角 ≤ 78°，防止近乎水平的无效发射。</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ============================== 07 ============================== -->
+<section id="s7">
+<h2><span class="no">07</span>游戏状态机</h2>
+<pre><code>                        ┌─────────────── 暂停 / onHide ───────────────┐
+                        ▼                                             │
+  [LOADING] → [MENU] → [LEVEL_SELECT] → [READY] → [PLAY] ────────┐  │
+                                    入场动画完成↓首次触摸│  瞄准/发射/回弹/接球全在 PLAY 内并行
+                                        ┌───────────────────┐ │
+                                        │  连续 22s 无消除  │─┼─→ [BOTTOM_OPEN] 停滞开底排空
+                                        │  elapsed ≥ 240s   │ │  （硬超时兜底，期间接住不再回弹）
+                                        └───────────────────┘ │
+                     方块全消（即时）→ [WIN] ◄───────┘
+                     弹药耗尽且球全漏完→ [LOSE]   （残留球继续消则可仍判 WIN）
+                        │                     │
+                        ▼                     ▼
+                  结算/耗时星级/分享     复活广告/重玩</code></pre>
+
+<table>
+  <thead><tr><th style="width:16%">状态</th><th style="width:26%">进入条件</th><th style="width:30%">该状态下的行为</th><th>退出条件</th></tr></thead>
+  <tbody>
+    <tr><td><code>READY</code></td><td>关卡加载完成</td><td>方块播放入场动画（逐行错峰）、显示关卡目标与操作提示；挡板居中</td><td>首次触摸 → <code>PLAY</code>（耗时从此起自动计时）</td></tr>
+    <tr><td><code>PLAY</code></td><td>READY</td><td><b>瞄准/发射/回弹/接球全部并行</b>：拖空白有弹药→拉预测点列/松手发射；拖横条→摆位/接管；物理模拟；接住回弹；停滞计时；<b>消除最后一个方块的瞬间直接判胜</b></td><td>方块清空→WIN；弹药耗尽且无球→LOSE</td></tr>
+    <tr><td><code>BOTTOM_OPEN</code><br><small style="color:var(--txt3)">PLAY 内子态</small></td><td>连续无消除 ≥ 22s 或 elapsed ≥ 240s</td><td>底部墙壁行淡出并失去碰撞体，球强制回落（前 3s 闪烁警告）；<b>开底期间接住不再回弹</b>（保证收敛）</td><td>球漏完或发生新消除（回写 stallTime）→ 回常闭 PLAY</td></tr>
+    <tr><td><code>WIN</code> / <code>LOSE</code></td><td>见上</td><td>结算浮层：耗时星级、得分、消除数、最长回弹链、剩余发射；写存档；<b>关闭底部墙壁</b>防止残留球继续弹</td><td>下一关 / 重玩 / 返回</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <span class="t">v2 为何把 AIM/FLY/ROUND_END 合并为单一 PLAY？</span>
+  需求方拍板“接住后继续回弹”，意味着不存“回合边界”——球可以永远在场被接住弹回。
+  因此瞄准与发射不再需要一个与飞行互斥的独立阶段：只要在 PLAY 内、还有弹药、拖在空白处，
+  随时可以拉下一条并发射下一颗（同屏多波球）。<b>状态机从 v1 的 6 态简化为 READY/PLAY/WIN/LOSE 四态</b>。
+</div>
+<div class="note">
+  <span class="t">为什么「方块清空」不能等到球落完再判胜？</span>
+  无重力封闭容器里存在「单个墙块 + 容器顶壁」的<b>永久垂直乒乓陷阱</b>，球永不离场。
+  把胜利判定下移到物理层（destroyCell 后即时 <code>finish(true)</code>），
+  <b>任何导致球永不离场的极端状态都无法阻塞结算</b>；另以停滞 22s + 硬超时 240s 双保险强制开底排空。
+</div>
+</section>
+
+<!-- ============================== 08 ============================== -->
+<section id="s8">
+<h2><span class="no">08</span>物理与规则细则</h2>
+
+<h3>8.1 双区物理模型<span class="tag p0">核心决策</span></h3>
+<div class="grid2">
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--cyan)">竞技区（容器内）</h4>
+    <ul style="font-size:13px;margin-bottom:0">
+      <li><b>无重力</b>，小球匀速直线运动，速度恒定 500 px/s</li>
+      <li>碰撞按<b>完美镜面反射</b>：<code>v' = v − 2(v·n)n</code>，恢复系数 = 1（无能量损失）</li>
+      <li>碰撞对象：容器左/右/顶壁、墙壁方块、可消除方块</li>
+      <li>意义：<b>弹道 100% 可预测</b>，预测线即真实轨迹，"算角度"成立</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--yellow)">接球区（缺口以下）</h4>
+    <ul style="font-size:13px;margin-bottom:0">
+      <li><b>无重力</b>，匀速直线（保持全场景物理统一，无需抛物线预测）</li>
+      <li>速度 ×0.84 → 420 px/s，给玩家反应时间（v7 需求④）</li>
+      <li>左右保留容器外壁（可打库边反弹），球不会白白飞出屏幕</li>
+      <li><b>接住→沿拖动方向回弹</b>（v2）；球心越过漏接线→该球永久消失</li>
+    </ul>
+  </div>
+</div>
+<div class="note">
+  <span class="t">为什么不用重力？</span>
+  ① 需求描述是"按角度反弹"，属镜面反射语义；② 无重力时弹道是直线，预测线绘制简单且<b>与真实轨迹完全一致</b>，
+  这是"算角度"类玩法的信任基础；③ 有重力则弹道为抛物线，容器内球会很快坠向缺口，回合过短、策略性差。
+  <b>备选方案</b>（若后续想要更"物理感"）：仅接球区施加重力 <code>g = 800 px/s²</code>，
+  竞技区仍无重力——落点更自然，但接球预测需改抛物线，且要重新配平横条宽度。
+</div>
+
+<h3>8.2 碰撞检测与防穿透</h3>
+<table>
+  <thead><tr><th style="width:22%">技术点</th><th style="width:30%">方案</th><th>原因</th></tr></thead>
+  <tbody>
+    <tr><td><b>子步进</b></td><td>每帧将 <code>dt</code> 切成 <b>8 份</b>依次推进并检测</td><td>60fps 下 500px/s 每帧移动 ~8.3px；格宽仅 11.7px，单帧检测必穿透，8 子步进后单步 ~1.04px < 球径，即使 900px/s 也不穿透（已压测）</td></tr>
+    <tr><td><b>圆 vs AABB</b></td><td>取矩形上距球心最近点，判定距离 &lt; 半径</td><td>标准做法，法线即"最近点→球心"方向，天然正确</td></tr>
+    <tr><td><b>广相裁剪</b></td><td>只检查球 AABB 覆盖的网格单元（最多 2×2 = 4 格）</td><td>O(1) 复杂度，与方块总数无关，16 球 × 8 子步进 × 4 格 = 512 次检测/帧，性能无压力</td></tr>
+    <tr><td><b>多碰撞取舍</b></td><td>同一子步进内只解算<b>穿透最深</b>的一个碰撞</td><td>避免同时解算多个碰撞导致的抖动 / 弹飞</td></tr>
+    <tr><td><b>陷入处理</b></td><td>球心已在方块内部时，按<b>最小穿透轴</b>确定法线并整体推出</td><td>此时最近点 = 球心，法线无定义，必须特殊处理，否则球会卡死在方块里</td></tr>
+    <tr><td><b>位置修正</b></td><td>推出距离 = <code>r − d + 0.2</code>（额外 0.2px 余量）</td><td>防止浮点误差导致同一碰撞被连续触发</td></tr>
+    <tr><td><b>速度归一</b></td><td>每次反弹后重新归一化到目标速度</td><td>累积浮点误差会让球速漂移，长时间回合后可感知</td></tr>
+    <tr><td><b>反退化</b></td><td>速度分量下限 = 9% × 速率，不足则抬升并重新归一</td><td>避免完全水平 / 完全垂直的弹道在矩形容器内无限循环，永不落地</td></tr>
+  </tbody>
+</table>
+
+<h3>8.3 分裂规则</h3>
+<pre><code>触发：球击中「分裂道具方块 S」→ 方块消除 → 该球分裂为 2 颗
+新球方向：原方向绕命中点旋转 ±20°（SPLIT_ANGLE；符号按当前球数奇偶交替，避免全部偏向同一侧）
+新球位置：与母球重合后沿自身反方向回撤 0.012s（≈ 5px），避免母子球重叠导致二次碰撞
+继承属性：速度大小、所在区域（arena / catch）
+限制：① 同屏球数上限 16 颗，超出时只消除方块不分裂，并飘字"已达上限"
+      ② 同一颗球分裂冷却 0.12s，防止在密集分裂块区域瞬间指数爆炸
+      ③ 新球立即进入冷却（splitAt = now），避免"分裂出的球马上再分裂"
+      ④ v2 地图每关分裂块限 0~2 个，因为回弹链已能提供持续火力，无需靠分裂指数爆炸</code></pre>
+<div class="note warn">
+  <span class="t">v2 分裂数量的控制</span>
+  理论上 1 → 2 → 4 → 8 → 16 只需 4 次分裂。但 v2 每关只放 <b>0~2 个分裂块</b>（L1 零、L2/L3 少量），
+  因为"3 球 + 接住回弹链"本身已把一颗球的价值放大很多，再叠加密集分裂会使同屏球数与清屏速度失控。
+  上限 16 是<b>性能保险而非玩法常量</b>：16 颗球 + 拖尾（每球 8 段）= 144 次圆形绘制/帧，中端安卓机可稳 60fps。若偏低端可降到 12 或关拖尾。
+</div>
+
+<h3>8.4 停滞开底与关卡硬超时<span class="tag ok">v2 收敛机制</span></h3>
+<p>
+  容器封闭 + 无重力 + 接住回弹 → 存在球<b>永远在容器内回弹但不再产生消除</b>的可能。
+  v2 取消回合计时，改用两道<b>以“消除”为锚点</b>的收敛保险：
+</p>
+<ul>
+  <li><b>停滞计时 22s（STALL_TIME）</b>：从<b>上一次发生消除</b>起计时；一旦发生新消除（destroyCell）立即归零。<b>连续 22s 无任何消除</b>→开底。</li>
+  <li><b>剩余 3s 警告</b>（OPEN_WARN）：底部墙壁行整体闪烁（透明度 0.72~1.0 正弦脉动），提示"要开底了"。</li>
+  <li><b>关卡硬超时 240s（LEVEL_TIMEOUT）</b>：<code>elapsed ≥ 240s</code> 无条件下令开底。防止“完美回弹链使球永不着地、但每次相邻消除间隔又永远 < 22s”导致停滞计时无法收敛（仿真实测撞到过）。</li>
+  <li><b>开底行为</b>：底部墙壁行 <code>opened = true</code>，失去碰撞体并淡出至 16% 透明度，所有球自由回落；<b>开底期间接住不再回弹</b>（保证必然收敛，也是对磨洋工的惩罚）。</li>
+  <li><b>恢复封闭</b>：若开底后又发生新消除（回写 stallTime 并重新封闭）；或球漏完且仍有弹药→回常闭 PLAY。</li>
+</ul>
+<div class="note warn">
+  <span class="t">为何不用单一停滞计时，还要硬超时？</span>
+  v2 仿真发现一个典型死局：残局只剩 1 个<b>不可消方块（墙）</b>，完美回弹链使球永不着地（balls 恒 >0），
+  上一颗可消块被消后 stallTime 归零，但后续再无新消除→ stallTime 持续累积；若残局单球大场地往返，
+  相邻两次消除的间隔可永远 < 22s，停滞计时无法单独收敛。<b>因此额外加一条 240s 硬超时兜底</b>（已写进代码与 §13）。
+</div>
+
+<h3>8.5 接住回弹</h3>
+<table>
+  <thead><tr><th style="width:22%">事件</th><th style="width:30%">判定</th><th>结果</th></tr></thead>
+  <tbody>
+    <tr><td><b>接住回弹</b></td><td>球与横条矩形（圆-矩形最近点法）相交</td><td><b>球不消失</b>，沿拖动方向弹回竞技区：<code>vx += paddle.vx × BOUNCE_KICK(0.55)</code>，钳制 ±78°；静止接住≈原路竖直回弹；+5 分；金色粒子 + 音效 + 轻震</td></tr>
+    <tr><td><b>漏接</b></td><td>球心 y &gt; 漏接线(652)</td><td>球<b>永久消失</b>；<b>连击清零</b>；红色粒子 + 低沉音效 + 震动；若弹药已尽且无残留球→判负</td></tr>
+    <tr><td><b>胜负</b></td><td>即时判定（无“回合结算”）</td><td>任一可消块被清空→WIN；<code>shotsLeft=0</code> 且 <code>balls.length=0</code> 且仍有可消块→LOSE</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <span class="t">v2 为何删掉"保底补 1 球"？</span>
+  v1 需要保底是因为“接住转弹药”，漏接会导致下一轮无球可发的死锁。v2 中<b>接住不回收入弹药，而是直接回弹</b>，
+  弹药（3 颗发射机会）与同屏球是两个独立概念：只要还能发射，球总会落下；漏接的代价是“该球永久消失、火力减弱”，
+  而不会出现“有次数无球”的死锁，因此无需保底。<b>“接住→回弹→再消除”本身就是正反馈</b>。
+</div>
+</section>
+
+<!-- ============================== 09 ============================== -->
+<section id="s9">
+<h2><span class="no">09</span>关卡设计</h2>
+
+<h3>9.1 数据格式</h3>
+<p>关卡用<b>字符串地图</b>描述，v2 一行 <b>30 个字符</b>、共 <b>22 行</b>。可读、可手改、可 Diff、体积极小（每关 ≈ 660 字节，1000 关也仅 ≈ 0.65MB，主包毫无压力）。</p>
+<pre><code>{
+  id: 1,
+  name: '初识弹球',
+  tip: '拖空白瞄准发射；球落回时拖动横条，接住会朝你拖的方向弹回去。',
+  balls: 3,                 // 每关发射机会（v2 需求方拍板统一 3 颗）
+  starTimes: [55, 90],      // [三星线, 二星线] 秒；通关耗时≤55s→3星，≤90s→2星，否则 1 星（由 balance-sim 校准）
+  map: [
+    '..............................',   // 第 0 行（顶），30 个字符
+    '......BB......................',
+    '.B.............B..B.BB...B....',
+    // ... 共 22 行，全高度散布（scatter）使球全程有块可打
+    'WWWWWWWWW............WWWWWWWWW'    // 第 21 行 = 底部墙壁行 + 12 格缺口
+  ]
+}
+
+图例： . 空格   B 可消除方块   W 不可消除墙壁   S 分裂道具方块
+扩展（P1）： X 炸弹   + 加球   ★ 星币   P 穿透</code></pre>
+<div class="note">
+  <span class="t">校验规则（建议做成打包前检查脚本）</span>
+  ① 每关 <code>map.length === ROWS(22)</code> 且每行长度 === COLS(30)；
+  ② 最后一行必须<b>只含 W 和 .</b>，且 <code>.</code> 连续为一个缺口（v2：L1 12 / L2 10 / L3 8 格）；
+  ③ 可消除方块总数 ≥ 1，否则关卡无意义；
+  ④ <b>连通性检查</b>：从缺口向上做洪泛填充，所有可消除方块必须可达；
+  ⑤ 3 球 + 回弹链下，需仿真验证可清性与耗时分布（starTimes），见 §11。
+</div>
+
+<h3>9.2 难度曲线的四个旋钮</h3>
+<table>
+  <thead><tr><th style="width:20%">旋钮</th><th style="width:26%">作用</th><th>使用建议</th></tr></thead>
+  <tbody>
+    <tr><td><b>发射机会 balls</b></td><td>最直接的资源压力</td><td>v2 统一 3 颗，通过关靠回弹链质量而非堆次数；靠布局复杂度而非次数制造递进</td></tr>
+    <tr><td><b>缺口位置 / 宽度</b></td><td>决定入射角容差与摆位难度</td><td>逐关递增收窄：L1 12 格居中 → L2 10 格偏置 → L3 8 格窄口</td></tr>
+    <tr><td><b>散布密度 / 墙壁造型 W</b></td><td>决定球能否全程有块可打</td><td>v2 采用<b>全高度散布</b>（非连续顶棚），内部仅少量墙柱；避免陷阱口袋拉低新手通关率</td></tr>
+    <tr><td><b>分裂块 S</b></td><td>瞬时火力补充</td><td>v2 限制每关 <b>0~2 个</b>（回弹链已是主火力源，密集分裂会使清屏与同屏球数失控）</td></tr>
+  </tbody>
+</table>
+
+<h3>9.3 已交付的 3 个示例关（原型内可玩）</h3>
+<div class="grid3">
+  <div class="card">
+    <h4 style="margin-top:0">第 1 关 · 初识弹球</h4>
+    <p style="font-size:12.5px;color:var(--txt2);margin-bottom:8px">
+      <b>教学目标</b>：瞄准 → 发射 → 消除 → 接住回弹。<br>
+      <b>布局</b>：无内部墙柱的纯散布（scatter），缺口居中 12 格，横条初始位置即对准缺口 → <b>竖直发射必进</b>，零门槛上手。<br>
+      <b>数据</b>：101 个可消除方块 / 0 个分裂块 / 3 颗球（发射机会）/ 无墙<br>
+      <b>仿真通关率</b>：<span style="color:var(--green)">80%（新手）· 83%（熟练）</span><br>
+      <b>三星/二星线</b>：55s / 90s。本关不设熟练上限（纯教学关，职责是把人教会）
+    </p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0">第 2 关 · 缺口偏置</h4>
+    <p style="font-size:12.5px;color:var(--txt2);margin-bottom:8px">
+      <b>教学目标</b>：教会「拖横条摆位」与「回弹方向控制」。<br>
+      <b>布局</b>：缺口移到偏左（10 格），横条初始居中 → 竖直发射必撞墙（预测点列显示红色 ✕），逼玩家主动摆位；少量内部墙柱 + 2 个分裂块。<br>
+      <b>数据</b>：167 个可消除方块 / 2 个分裂块 / 3 颗球 / 少量墙柱<br>
+      <b>仿真通关率</b>：<span style="color:var(--green)">68%（新手）· 90%（熟练）</span>，为 3 关新手的<b>最低点</b><br>
+      <b>三星/二星线</b>：70s / 120s。难度峰值刻意安排在“学会摆位 + 控回弹角”这一步
+    </p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0">第 3 关 · 满屏窄口</h4>
+    <p style="font-size:12.5px;color:var(--txt2);margin-bottom:8px">
+      <b>教学目标</b>：体验「回弹链」把一颗球火力放到最大的核心爽点。<br>
+      <b>布局</b>：满屏高密度散布 + <b>窄缺口 8 格</b>（容差仅 ±8.9°）+ 少量墙柱与 2 个分裂块。球一进容器就密集消除，回弹角度控制是关键。<br>
+      <b>数据</b>：212 个可消除方块 / 2 个分裂块 / 3 颗球 / 窄缺口<br>
+      <b>仿真通关率</b>：<span style="color:var(--green)">65%（新手）· 78%（熟练）</span>；<b>三星/二星线</b> 100s / 165s
+    </p>
+  </div>
+</div>
+
+<h3>9.4 30 关 MVP 排布建议</h3>
+<table>
+  <thead><tr><th style="width:12%">区间</th><th style="width:17%">章节名</th><th style="width:15%">缺口</th><th style="width:20%">新手通关率地板</th><th>设计要点</th></tr></thead>
+  <tbody>
+    <tr><td>1 ~ 5</td><td>新手村</td><td>居中 12~10 格</td><td>≥ 60%</td><td>逐个教学：瞄准 / 接住回弹 / 分裂 / 摆位 / 回弹链。每关引入 1 个新概念</td></tr>
+    <tr><td>6 ~ 12</td><td>回廊</td><td>偏置 10~9 格</td><td>≥ 50%</td><td>引入墙壁造型：漏斗、Z 字、中空。强制使用摆位</td></tr>
+    <tr><td>13 ~ 20</td><td>窄口</td><td>偏置 9~8 格</td><td>≥ 45%</td><td>分裂块位置变刁钻（藏在墙壁后），需要打库边折射</td></tr>
+    <tr><td>21 ~ 28</td><td>精算</td><td>8 格</td><td>≥ 40%</td><td>星线收紧，必须规划每一杆与回弹链路径</td></tr>
+    <tr><td>29 ~ 30</td><td>Boss 关</td><td>8 格 / 移动</td><td>≥ 35%</td><td>大场面 + 高密度，通关即成就，引导分享</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <span class="t">v2 为何只设新手地板、不设熟练上限</span>
+  v1 曾给每关定一条双边带（新手 floor + 熟练 ceil），但那是 9 列 + 回合制前提下的结论。<b>v2 的 3 颗球锁死了难度</b>：
+  方块上百个却只给 3 次发射，熟练玩家满通关（接近 100%）<b>是合法且预期的</b>，不应被“无聊上限”拦截。
+  因此 v2 门禁改为<b>单地板模型</b>：新手档只看 floor（L1≥60% / L2≥50% / L3≥45%），熟练档只看全局兜底 ≥ 40%，
+  不设 HARD.max（=1.0）。实现见 <a href="balance-sim.js"><code>balance-sim.js</code></a> 的 <code>BANDS</code> / <code>bounds()</code>；
+  <b>改关卡定位时改 BANDS，而不是改阈值去将就测出来的数字。</b>
+</div>
+<p style="font-size:13px;color:var(--txt2)">
+  <b>P1 进阶机制</b>：① 缺口周期水平移动（迫使玩家重新摆位）；
+  ② 移动墙壁（左右往返巡逻）；③ 不可消除但可推动的方块；④ 传送门（成对出现）。
+</p>
+</section>
+
+<!-- ============================== 10 ============================== -->
+<section id="s10">
+<h2><span class="no">10</span>数值 / 计分 / 星级</h2>
+
+<h3>10.1 计分表</h3>
+<table>
+  <thead><tr><th style="width:30%">事件</th><th class="num" style="width:14%">分值</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>消除普通方块</td><td class="num">10</td><td>基础分</td></tr>
+    <tr><td>消除分裂方块</td><td class="num">25</td><td>鼓励主动瞄准道具块</td></tr>
+    <tr><td>连击加成</td><td class="num">+2 × 连击数</td><td>连击数上限 10（即最多 +20）；<b>漏接时清零</b>，把回弹链技巧纳入计分</td></tr>
+    <tr><td>接住回弹 1 颗球</td><td class="num">5</td><td>正反馈“接住不丢、继续回弹”行为</td></tr>
+    <tr><td>星级奖励</td><td class="num">200 / 500 / 900</td><td>对应 1 / 2 / 3 星（v2：按通关耗时评定，见 10.2）</td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px;color:var(--txt2)">
+  连击定义：<b>一次发射内</b>连续消除方块的计数，发射结束（球全部结算）后归零。
+  连击既是分数放大器，也是视觉爽点（右下角 <code>x12 COMBO</code> 脉动大字）。
+</p>
+
+<h3>10.2 星级规则（v2：耗时评星）</h3>
+<pre><code>通关耗时 elapsed（秒）与本关 starTimes = [三星线, 二星线] 比较：
+
+★★★  elapsed ≤ starTimes[0]    L1 ≤55s / L2 ≤70s / L3 ≤100s
+★★    elapsed ≤ starTimes[1]    L1 ≤90s / L2 ≤120s / L3 ≤165s
+★     通关即得
+✗     3 颗球漏完且发射机会耗尽仍有方块 → 失败</code></pre>
+<div class="note">
+  <span class="t">为何 v2 改用「耗时」而非「剩余次数」评星？</span>
+  v2 每关统一 3 颗球，“剩余次数”只能取 0/1/2/3 几个粒度，无法拉开星级差距；且接住回弹后球不再回收，
+  “省次数”语义已不存在。<b>耗时是自连续回弹链质量的天然指标</b>：链越长、回弹角控得越好 → 消得越快。
+  starTimes 以 v2 仿真校准：<b>三星线≈熟练中位耗时、二星线≈新手中位耗时</b>。得分仍作为排行榜维度单独存在。
+</div>
+
+<h3>10.3 存档结构</h3>
+<pre><code>// wx.setStorageSync('tantan_progress_v1', ...)
+{
+  "lv0": { "stars": 3, "best": 4820 },   // 已解锁关卡的最高星级与最高分
+  "lv1": { "stars": 2, "best": 3160 },
+  "unlock": 2,                            // 已解锁到的关卡索引
+  "totalStars": 5,
+  "settings": { "sound": true, "vibrate": true },
+  "stats": { "plays": 12, "wins": 9, "maxCombo": 41 }
+}</code></pre>
+</section>
+
+<!-- ============================== 11 ============================== -->
+<section id="s11">
+<h2><span class="no">11</span>仿真配平报告<span class="tag ok">v2 实测数据</span></h2>
+<p>
+  为避免“拍脑袋定数值”，本设计用 <b>Node.js 无头仿真</b>直接跑真实游戏逻辑（复用原型的
+  <code>prototype-core.js</code> + <code>prototype-data.js</code>，不做任何简化），由脚本
+  <a href="balance-sim.js"><code>design/balance-sim.js</code></a> 模拟不同熟练度的玩家进行上千局对局。
+  这套方法论（工具自证 + 固定种子 + 跨种子复核）在 v1 已被证伪一轮后建立（见 11.1），<b>v2 沿用同一套工具与玩家模型</b>，
+  只是重新按 30 列 / 3 球 / 连续回弹的新模型配平。<b>本章 11.2~11.4 与 11.6 为 v2 实测，11.5 / 11.7 为 v1 存档（方法论与调优史保留，具体数字基于 9 列回合制）。</b>
+</p>
+
+<h3>11.1 测试工具自己先被证伪：4 处缺陷<span class="tag warn">方法论</span></h3>
+<p style="font-size:13px;color:var(--txt2);margin-bottom:10px">
+  第一版脚本给出的结论是「三关全部达标」，但这个结论<b>是错的</b>。在把它当门禁固化之前逐条复核，发现工具本身有 4 处问题：
+</p>
+<table>
+  <thead><tr><th style="width:20%">缺陷</th><th style="width:32%">症状</th><th>修复</th></tr></thead>
+  <tbody>
+    <tr><td><b>① 结果不可复现</b></td><td>同一份关卡数据、同样参数跑两次，通关率 88% 与 91% —— 门禁时过时不过，等于没有门禁</td>
+        <td>用 <code>mulberry32</code> 固定种子覆盖 <code>Math.random</code>（同时作用于玩家模型与游戏内部随机）。验证：同配置两次输出的文本用 <code>fc</code> 逐字节比对，差异 0</td></tr>
+    <tr><td><b>② 玩家模型是完美接球机器</b></td><td>漏接率恒为 <b>0.0%</b>，接球环节完全没被验证；而 §15.2 的目标是 20%~35%</td>
+        <td>加两项人类约束：<b>反应粒度</b> <code>REACT = 60×(0.12+0.15×(1−skill))</code> 帧（新手 16 帧才改一次落点预判）、<b>落点误差</b> <code>ERR = 1.6×CELL×(1−skill)</code> px（新手 ±19px）。原模型每帧重写落点且零误差，那不是人在玩</td></tr>
+    <tr><td><b>③ 统计口径丢数据</b></td><td>漏接计数只在 <code>caughtThisRound</code> 变小时结算，某回合「接 0 漏 1」时该回合数据整批丢弃 → 报出误导性的 0.0%</td>
+        <td>改用两个计数的历史最大值，并以「双计数同时归零」作为回合边界来 flush</td></tr>
+    <tr><td><b>④ 异常计数串扰</b></td><td>压测行打印的是全局 <code>anomalies</code>，「压测异常 1 项」实际是关卡平衡性的越界，容易让人误以为物理层有问题</td>
+        <td>压测前后取快照做差，两类异常分开计数</td></tr>
+  </tbody>
+</table>
+<div class="note warn">
+  <span class="t">修完 ② 之后，之前「达标」的结论全部作废</span>
+  加入人类约束后，三关的通关率<b>整体下移 5~16pp</b>（例如第 2 关新手档从 78.5% 掉到 61.9%，且跨种子极差高达 14pp）。
+  这说明<b>仿真脚本的可信度必须先于它给出的数字被验证</b>：一个失真但跑得通的测试，比没有测试更危险，
+  因为它会让「数值已配平」这个结论带着假信心进入开发排期。
+</div>
+
+<h3>11.2 关卡平衡性（种子 20261020 · 每关每档 250 局 · 共 1500 局）<span class="tag ok">v2 实测</span></h3>
+<table>
+  <thead>
+    <tr><th>关卡</th><th class="num">球</th><th class="num">可消除<br>方块</th><th class="num">分裂<br>块</th>
+        <th class="num">通关率<br><small>新手 / 熟练</small></th><th class="num">门禁<br><small>新手floor/熟练兜底</small></th><th class="num">平均星级<br><small>新手 / 熟练</small></th>
+        <th class="num">平均消除</th><th class="num">最长回弹链</th><th class="num">胜局均耗时</th><th class="num">峰值同屏</th><th class="num">漏接率</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>1 初识弹球</b></td><td class="num">3</td><td class="num">101</td><td class="num">0</td>
+        <td class="num"><b style="color:var(--green)">80% / 75%</b></td><td class="num">≥60 / ≥40</td><td class="num">2.31 / 2.33</td>
+        <td class="num">99.6 / 99.1</td><td class="num">34 / 38</td><td class="num">62 / 62s</td><td class="num">3.0 / 3.0</td><td class="num">2.4% / 2.3%</td></tr>
+    <tr><td><b>2 缺口偏置</b></td><td class="num">3</td><td class="num">167</td><td class="num">2</td>
+        <td class="num"><b style="color:var(--green)">78% / 85%</b></td><td class="num">≥50 / ≥40</td><td class="num">1.99 / 2.14</td>
+        <td class="num">157.1 / 160.7</td><td class="num">51 / 59</td><td class="num">100 / 91s</td><td class="num">4.0 / 4.3</td><td class="num">2.8% / 2.0%</td></tr>
+    <tr><td><b>3 满屏窄口</b></td><td class="num">3</td><td class="num">212</td><td class="num">2</td>
+        <td class="num"><b style="color:var(--green)">60% / 76%</b></td><td class="num">≥45 / ≥40</td><td class="num">2.17 / 2.36</td>
+        <td class="num">186.3 / 195.7</td><td class="num">58 / 70</td><td class="num">124 / 111s</td><td class="num">3.8 / 4.2</td><td class="num">3.0% / 1.9%</td></tr>
+    <tr style="background:var(--bg2)"><td colspan="4"><b>总通关率</b></td>
+        <td class="num" colspan="2"><b style="color:var(--green)">73% / 79%</b></td>
+        <td class="num" colspan="6">全档落在单地板区间 · 0 卡死 · 脚本退出码 <b>0</b></td></tr>
+  </tbody>
+</table>
+<p style="font-size:12.5px;color:var(--txt3)">
+  <b>玩家模型</b>（两档都会读取弹道预测结果，预测撞底部墙壁时自动回正入射角 —— 等同一个<b>已经理解规则的玩家</b>，而非随机乱打）：<br>
+  · <b>新手</b> <code>skill=0.55</code>：摆位误差 ±20px、入射角取容差的 68%、接球每 16 帧才重写一次落点预判、预判误差 ±19px；<br>
+  · <b>熟练</b> <code>skill=0.90</code>：摆位误差 ±4px、入射角取容差的 89%、每 7 帧重写预判、误差 ±4px。<br>
+  <b>门禁</b>：v2 采用<b>单地板模型</b>——新手档只校 floor（L1≥60 / L2≥50 / L3≥45），熟练档只校全局兜底 ≥40%，<b>不设无聊上限</b>（3 球锁定难度，熟练满通关合法，理由见 §9.4）。
+</p>
+
+<h3>11.3 跨种子复核：这些数字不是挑出来的</h3>
+<p style="font-size:13px;color:var(--txt2);margin-bottom:10px">
+  固定种子解决了「可复现」，但带来一个新风险：<b>挑一个好种子把门禁哄过去</b>。
+  因此额外跑 5 个不同种子 × 每档 50 局，把每个种子的通关率全部列出来，而不是只给均值
+  （脚本：<a href="seed-check.js"><code>design/seed-check.js</code></a> —— <code>node design/seed-check.js 50</code>，
+  退出码 0 = 5 种子 × 3 关 × 2 档共 30 组逐组均不越界；<b>下表由它直接产出</b>）：
+</p>
+<table>
+  <thead><tr><th style="width:26%">关卡 · 档位</th><th style="width:22%">5 个种子各自通关率</th><th class="num">均值</th><th class="num">极差</th><th class="num">门禁</th><th>判定</th></tr></thead>
+  <tbody>
+    <tr><td><b>1 初识弹球</b> · 新手</td><td class="num">80 / 76 / 72 / 80 / 80</td><td class="num"><b>77.6%</b></td><td class="num">8pp</td><td class="num">≥ 60%</td><td style="color:var(--green)">✅ 最差种子仍高出下限 12pp</td></tr>
+    <tr><td><b>1 初识弹球</b> · 熟练</td><td class="num">74 / 80 / 82 / 78 / 88</td><td class="num"><b>80.4%</b></td><td class="num">14pp</td><td class="num">≥ 40%</td><td style="color:var(--green)">✅</td></tr>
+    <tr><td><b>2 缺口偏置</b> · 新手</td><td class="num">68 / 76 / 76 / 84 / 82</td><td class="num"><b>77.2%</b></td><td class="num">16pp ⚠</td><td class="num">≥ 50%</td><td style="color:var(--green)">✅ 三关最难档，余量 18pp</td></tr>
+    <tr><td><b>2 缺口偏置</b> · 熟练</td><td class="num">86 / 90 / 94 / 92 / 92</td><td class="num"><b>90.8%</b></td><td class="num">8pp</td><td class="num">≥ 40%</td><td style="color:var(--green)">✅</td></tr>
+    <tr><td><b>3 满屏窄口</b> · 新手</td><td class="num">64 / 68 / 48 / 56 / 70</td><td class="num"><b>61.2%</b></td><td class="num">22pp ⚠</td><td class="num">≥ 45%</td><td style="color:var(--green)">✅ 最差种子 48%（高过下限 3pp）</td></tr>
+    <tr><td><b>3 满屏窄口</b> · 熟练</td><td class="num">72 / 74 / 76 / 74 / 80</td><td class="num"><b>75.2%</b></td><td class="num">8pp</td><td class="num">≥ 40%</td><td style="color:var(--green)">✅</td></tr>
+  </tbody>
+</table>
+<p style="font-size:12.5px;color:var(--txt3)">
+  <b>退出码 0</b>：30 组逐组均落在目标区间，通关率不依赖种子选择。<b>两条极差警告</b>（L2·新手 16pp、L3·新手 22pp）是提示“样本量仍可提高”，<b>不会触发失败</b>。
+  N=50 时标准误约 3~7pp，极差落在 8~22pp；把它降到 N=20 时 L3·新手最差种子会噪到 40%（跌穿 45%）而误报失败——这正是为何跨种子复核必须给足样本量。
+  门禁用的 250 局（§11.2）中同一 L3·新手为 60%，与均值 61.2% 一致。
+</p>
+<div class="note">
+  <span class="t">为何 v2 不再卡“熟练上限”、也不卡第 1 关 ceil</span>
+  v1 曾给每关配一条双边带（新手 floor + 熟练 ceil），但那是 9 列 + 回合制前提下的结论。v2 的 <b>3 颗球锁死了难度</b>：
+  方块上百个却只给 3 次发射，熟练玩家满通关（接近 100%）<b>是合法且预期的</b>，不应被“无聊上限”拦截。
+  因此 v2 门禁只保留新手 floor + 全局兜底 ≥40%，不再设 ceil（实现为 HARD.max=1.0，理由见 §9.4）。
+  <b>边界必须由设计意图推导，不能为了把门禁跑绿而反过来改数字。</b>
+</div>
+
+<h3>11.4 连续回弹链节奏指标（v2 · 同一轮 1500 局）<span class="tag ok">v2 实测</span></h3>
+<p style="font-size:13px;color:var(--txt2);margin-bottom:10px">
+  v1 用「每局回合数 / 回合均长 / 每回合接住」描述节奏，但 <b>v2 废除了回合制</b>（接住不转弹药、球不回收），
+  这些指标已无意义。v2 的节奏由<b>回弹链长度</b>（一颗球被连续接住弹回多少次）、<b>同屏球数</b>、<b>开底频次</b>三个新指标刻画：
+</p>
+<table>
+  <thead><tr><th style="width:22%">关卡 · 档位</th><th class="num">最长回弹链</th><th class="num">峰值同屏</th><th class="num">场均开底</th><th class="num">全局均时长</th><th class="num">胜局均耗时</th><th class="num">漏接率（接/漏）</th></tr></thead>
+  <tbody>
+    <tr><td>1 初识弹球 · 新手</td><td class="num">34.4</td><td class="num">3.0</td><td class="num">0.20 次</td><td class="num">65.5s</td><td class="num">62.2s</td><td class="num">2.4%（10329/257）</td></tr>
+    <tr><td>1 初识弹球 · 熟练</td><td class="num">37.9</td><td class="num">3.0</td><td class="num">0.25 次</td><td class="num">66.2s</td><td class="num">61.5s</td><td class="num">2.3%（10889/259）</td></tr>
+    <tr><td>2 缺口偏置 · 新手</td><td class="num">50.9</td><td class="num">4.0</td><td class="num">0.22 次</td><td class="num">102.9s</td><td class="num">100s</td><td class="num">2.8%（19809/570）</td></tr>
+    <tr><td>2 缺口偏置 · 熟练</td><td class="num">59.1</td><td class="num">4.3</td><td class="num">0.15 次</td><td class="num">93s</td><td class="num">91.4s</td><td class="num">2.0%（20504/425）</td></tr>
+    <tr><td>3 满屏窄口 · 新手</td><td class="num">58.3</td><td class="num">3.8</td><td class="num">0.40 次</td><td class="num">118.2s</td><td class="num">123.6s</td><td class="num">3.0%（22398/684）</td></tr>
+    <tr><td>3 满屏窄口 · 熟练</td><td class="num">70</td><td class="num">4.2</td><td class="num">0.24 次</td><td class="num">111.4s</td><td class="num">111.4s</td><td class="num">1.9%（24080/471）</td></tr>
+  </tbody>
+</table>
+<div class="note warn">
+  <span class="t">v2 三个数字说明了什么</span>
+  · <b>最长回弹链 34 ~ 70 次</b>：这是 v2 的核心爽点——一颗球被连续接住弹回可掀起几十次消除，熟练玩家链更长。难度重心已从 v1 的「能否穿缺口」转移到「能否维持长回弹链」。<br>
+  · <b>场均开底 0.15 ~ 0.40 次</b>：比 v1 的「0.27 ~ 0.78 次」更低——连续回弹链清屏更快、更少停滞，开底<b>回落到 v1 曾期望的「低频兜底」定位</b>（见 §8.4）。<br>
+  · <b>漏接 1.9% ~ 3.0%</b>：高于 v1（因 v2 漏接即永久损失 3 颗配额之一），但仍远低于 §15.2 的 20%~35% 目标带。这是 v2 遗留的待观察张力点（见 §11.7）。<br>
+  · <b>峰值同屏 3 ~ 4.3 颗</b>：每关最多 3 颗球 + 分裂 → 同屏偶发 4~5 颗，远低于 16 上限，性能无忧。
+</div>
+
+<h3>11.5 调优过程 V0 ~ V6<span class="tag warn">v1 存档·方法论保留</span></h3>
+<table>
+  <thead><tr><th style="width:12%">轮次</th><th style="width:34%">配置</th><th style="width:22%">结果</th><th>结论与动作</th></tr></thead>
+  <tbody>
+    <tr><td>V0</td><td>11 行网格 · 1 格缺口 · 关卡1 共 32 方块 / 6 次发射</td>
+        <td style="color:var(--red)">通关率 <b>2%</b>，平均只消除 5.7/32</td>
+        <td><b>暴露致命缺陷</b>：1 格缺口的入射角容差仅 ±5.4°，随机角度发射几乎必然撞底部墙壁空放。<br>→ 动作：缺口加宽到 3 格、网格改 10 行以增高接球区、接球区加侧壁允许打库边、预测线加颜色反馈</td></tr>
+    <tr><td>V1</td><td>10 行 · 3 格缺口 · 关卡1 共 31 方块 / 6 次发射</td>
+        <td style="color:var(--yellow)">通关率 <b>25~30%</b></td>
+        <td>入射容差升至 ±22.2°，机制成立；但教学关难度过高。<br>→ 动作：关卡1 精简到 26 方块并增至 3 个分裂块；关卡2 发射次数 7→8</td></tr>
+    <tr><td>V2</td><td>shots 7 / 9 / 6，玩家模型每帧重写落点、零预判误差</td>
+        <td style="color:var(--yellow)">新手 88% / 79% / 89%，当时判定“全部达标”</td>
+        <td><b>这一轮结论后来被 V4 整体推翻</b>：模型是完美接球机器，漏接率恒为 0，难度被系统性低估。（V0 ~ V2 均使用该失真模型，但它们的<b>相对</b>趋势仍然成立）</td></tr>
+    <tr><td><b>V3</b></td><td>同一配置，但把结算判定与物理层解耦重新审视</td>
+        <td style="color:var(--red)"><b>两个真实游戏缺陷</b>：① 49 个方块全消却不判胜（回合永不结束）；② 900 局压测撞 1 次永久卡死</td>
+        <td>① 胜利判定只挂在回合结束上，而无重力封闭容器里存在「单个墙块 + 容器顶壁」的垂直乒乓陷阱（球永不离场 → <code>ROUND_END</code> 永不触发）→ 修复：把判胜下移到 <code>updateBalls</code> 末尾即时 <code>finish(true)</code>；② 开底也救不了这种陷阱（球根本下不到底部）→ 修复：<code>drainAssist()</code> 在开底后保留 ≥28% 横向分量。<b>两个坑均已写进代码注释与 §13.7</b></td></tr>
+    <tr><td><b>V4</b></td><td>不改游戏，只修测试工具本身（见 11.1）</td>
+        <td style="color:var(--red)">加入 REACT / ERR 后三关通关率<b>整体下移 5~16pp</b>，V2 的“达标”全部作废</td>
+        <td>诚实模型下实测：L1 新手 83.5%、L2 新手 61.9%（极差 14pp）、L3 新手 79.7% —— <b>三关全部跌破新手下限</b>。同时发现固定种子、修正统计口径后，旧结论无法复现</td></tr>
+    <tr><td>V5</td><td>试图用双边带 55%~95% 重新配平 shots</td>
+        <td style="color:var(--yellow)">L3 熟练 97% 触上界 → 降 shots → 新手又跌破下界，<b>无解</b></td>
+        <td>双边带在本玩法下数学上无解。改为<b>新手 floor + 熟练 ceil 两条单边界</b> + 全局兜底 40%~99%（实现为 <code>BANDS</code> / <code>bounds()</code>，设计依据见 §9.4）</td></tr>
+    <tr><td><b>V6</b></td><td><b>当前配置（已交付）</b>：shots 8 / 11 / 7（扫描 5 种子 × 120 局选出）</td>
+        <td style="color:var(--green)"><b>新手 90.7% / 80.9% / 93.1%<br>熟练 93.2% / 86.7% / 90.8%</b></td>
+        <td>6 项断言全绿；换 3 个不同种子重跑门禁退出码均为 0。难度曲线成立：教学关不卡人、摆位关最难、分裂关最爽快且最短。<b>采纳</b></td></tr>
+    <tr><td colspan="4" style="font-size:12.5px;color:var(--txt3)"><b>方法论小结</b>：七轮里真正改变结论的两次（V3、V4）都不是在调游戏数值，而是在质疑「测试本身能不能信」。
+      因此本项目的硬规矩是：<b>任何一次“达标”都必须先回答“工具凭什么可信”</b> —— 具体表现为固定种子 + 跨种子复核 + 玩家模型参数写进文档（而非藏在脚本里）。</td></tr>
+  </tbody>
+</table>
+
+<h3>11.6 物理健壮性压测<span class="tag ok">v2 实测</span></h3>
+<div class="grid4">
+  <div class="kpi g"><div class="n">250</div><div class="l">高速压测局数</div></div>
+  <div class="kpi g"><div class="n">900</div><div class="l">压测球速 px/s（2.1×）</div></div>
+  <div class="kpi g"><div class="n">0</div><div class="l">穿透 / NaN / 越界异常</div></div>
+  <div class="kpi g"><div class="n">0</div><div class="l">卡死局数（平衡性共 1500 局）</div></div>
+</div>
+<p style="font-size:13px;color:var(--txt2)">
+  压测方法：以 <b>900 px/s</b>（正常 420px/s 的 2.1 倍）+ 极限角度（±78°）随机发射，
+  逐帧检查每颗球的 <code>x/y/vx/vy</code> 是否为有限值、是否越出屏幕边界 50px 以上、同屏球数是否超上限。
+  v2 格宽仅 11.7px（比 v1 的 39px 小 3.3 倍），穿透风险高得多；结果 <b>0 异常</b>，验证了「8 子步进 + 最近点法线 + 陷入按最小穿透轴推出 + 速度归一 + 反退化」在 30 列细网格下仍成立。
+  压测同屏峰值球数 <b>1 颗</b>（极限角度下球很快离场），平衡性仿真峰值 <b>4.3 颗</b>，均远低于 16 上限；另每帧健全性检查嵌在平衡性 1500 局里，<b>0 卡死、0 穿透</b>。
+</p>
+
+<h3>11.7 仿真暴露但尚未解决的三个设计问题<span class="tag warn">v1 存档・需需求方拍板</span></h3>
+<div class="note good" style="margin-bottom:14px">
+  <span class="t">v2 下这三条的现状（先读这段再看下面的 v1 原文）</span>
+  ① <b>接球不构成挑战</b>：v2 漏接率升至 <b>1.9%~3.0%</b>（仍低于 §15.2 目标带，但漏接代价已变重——它直接损失 3 颗配额之一，不再“只有收益、没有风险”）——<b>部分缓解，仍需观察</b>。
+  ② <b>连射队列与横条位置耦合</b>：v2 无 <code>spawnQueue</code>（每颗球由玩家逐个发射），该缺陷<b>自然消解</b>。
+  ③ <b>超时开底不是兜底</b>：v2 场均开底降到 <b>0.15~0.40 次</b>（连续回弹链清屏快、少停滞），已回转为真正的<b>低频兜底</b>——<b>基本解决</b>。
+  以下 v1 原文保留，便于对照方法论与当时的量化证据。
+</div>
+<p style="font-size:13px;color:var(--txt2);margin-bottom:10px">
+  下面三条是<b>数据与需求设定直接冲突、或仿真无法自行判断对错</b>的问题。
+  我没有单方面改游戏参数去“凑”这些数字，而是把量化证据、可选缓解方向、以及它们各自牵连的待确认项写清楚：
+</p>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:26%">问题</th><th style="width:34%">量化证据与根因</th><th>可选缓解方向 / 牵连</th></tr></thead>
+  <tbody>
+    <tr><td>①</td><td><b>接球环节不构成挑战</b><br><small>与 §15.2 的漏接率 20%~35% 直接冲突</small></td>
+        <td>实测漏接率仅 <b>0.2% ~ 1.5%</b>。根因可算：球逸出后速度 335px/s，从容器底 470px 落到漏接线 652px 有 <b>0.54s</b>；
+          挡板 92px 在 351px 宽的接球区里占 26%，而新手模型的预判误差只有 ±19px，且挡板是<b>跟手瞬移（无横向速度上限）</b> —— 只要方向判对就一定接得住。
+          真正能造成漏接的只有「两球同时下落且相距 &gt; 92px」，但每回合平均只有 2.2~3.3 颗球回落</td>
+        <td><b>后果</b>：核心闭环里「接住几颗 = 下次连射几颗」这一环<b>只有收益、没有风险</b>，玩法张力缺失。<br>
+          <b>方向（三选一或组合）</b>：挡板 92 → 64px；逸出减速 ×0.78 → ×0.92（落球更快）；保证每回合至少 2~3 颗球同时回落。<br>
+          <b>牵连</b>：直接关联 §16.1 的 Q2「接球到底要不要」—— 若需求方选 B/C，本条自然消解</td></tr>
+    <tr><td>②</td><td><b>连射队列与横条位置耦合</b><br><small>仿真新发现的机制缺陷</small></td>
+        <td><code>S.spawnQueue</code> 里的后续球是从横条<b>「当前」</b>位置逐个生成的。玩家为了接球把横条拖到屏幕边缘，
+          就在污染下一轮弹药的发射原点 —— 弹药会从偏离缺口的位置射出，直接穿不进缺口。
+          这解释了为什么仅 1% 的漏接能让通关率下移 5~16pp：<b>惩罚被隐式放大到了下一回合</b></td>
+        <td><b>方向</b>：要么把连射原点固定为「本次按下发射时的横条位置」，要么在 UI 上显式画出弹药队列的发射点（玩家可预期即可接受）。<br>
+          <b>埋点</b>：新增 <code>shotOriginDrift</code>（回合开始 → 首次发射的横条位移），用真实数据验证玩家是否踩到（见 §15.1）</td></tr>
+    <tr><td>③</td><td><b>超时开底不是“兜底”，而是每局必经的节奏</b></td>
+        <td>触发率 <b>5.8% ~ 14.5%</b>，换算成每局 <b>0.27 ~ 0.78 次</b>。原稿把它描述为「小概率兜底事件」，
+          与实测差了一个量级（已同步修正 §8.4）</td>
+        <td><b>方向</b>：建议正式版把它<b>显式化成一个机制</b>（例如开底时给接球分加成、HUD 上常显回合倒计时），
+          而不是藏在 14s 计时器里 —— 因为玩家无法预期它。<br><b>牵连</b>：§16.1 的 Q4（是否改为「限定反弹次数」，后者更可预期）</td></tr>
+  </tbody>
+</table>
+<div class="note good">
+  <span class="t">这份数据的价值</span>
+  关卡数值不是估的，是<b>跑出来的</b>。仿真脚本 <a href="balance-sim.js"><code>design/balance-sim.js</code></a> 直接加载生产逻辑，
+  并已重构为可复用模块（导出 <code>simulate()</code> / <code>stress()</code> / <code>setSeed()</code>，扫描工具直接 <code>require</code> 它而不复制玩家模型）。
+  后续每加一关都可以用同样方式自动验收「通关率是否落在目标区间」，
+  建议把它固化为项目的<b>关卡平衡性回归测试</b>并接入 CI（详见 §13 技术方案）。<br>
+  <b>复现命令</b>：<code>node design/balance-sim.js 250 250 20261020</code>（退出码 0 = 通过）。
+</div>
+</section>
+
+<!-- ============================== 12 ============================== -->
+<section id="s12">
+<h2><span class="no">12</span>音效 / 特效 / 震动</h2>
+<p>休闲游戏的「手感」有一半来自反馈密度。原则：<b>每一个游戏事件都同时命中「视觉 + 听觉 + 触觉」三通道</b>，但强度分级，避免糊成一片噪音。</p>
+
+<h3>12.1 音效清单</h3>
+<table>
+  <thead><tr><th style="width:13%">音效</th><th style="width:15%">触发时机</th><th style="width:26%">声音特征</th><th style="width:11%">节流</th><th>备注</th></tr></thead>
+  <tbody>
+    <tr><td><code>shoot</code></td><td>发射</td><td>三角波 520→880Hz 上扬 0.10s</td><td>无</td><td>每颗球发射都播；v2 同屏多球时自然形成交错「哒哒」节奏</td></tr>
+    <tr><td><code>brick</code></td><td>消除方块</td><td>方波 300~560Hz 随机音高 0.07s</td><td>无</td><td><b>随机音高是关键</b>：连续消除自动构成上行音阶，是免费的爽感放大器</td></tr>
+    <tr><td><code>wall</code></td><td>撞墙壁 / 容器壁</td><td>正弦 150→90Hz 闷响 0.05s</td><td><b>45ms</b></td><td>必须节流，否则连续反弹会爆音</td></tr>
+    <tr><td><code>split</code></td><td>触发分裂</td><td>锯齿波 660→1320Hz 0.20s</td><td>无</td><td>标志性音，建议做成可识别的品牌音</td></tr>
+    <tr><td><code>catch</code></td><td>接住回弹</td><td>正弦 880→1180Hz 清亮 0.09s</td><td>无</td><td>音量略高于其它音效，强调“接住不丢、继续回弹”的正反馈</td></tr>
+    <tr><td><code>lose</code></td><td>漏接</td><td>方波 220→90Hz 0.16s</td><td>无</td><td>伴随强震动，但不要过于刺耳</td></tr>
+    <tr><td><code>open</code></td><td>停滞/超时开底</td><td>三角波 400→200Hz 0.28s</td><td>无</td><td>低频提示「闸门打开」（停滞 22s 或 240s 硬超时）</td></tr>
+    <tr><td><code>win</code></td><td>通关</td><td>大三和弦上行 523/659/784</td><td>无</td><td>三星时额外叠加上行短音</td></tr>
+    <tr><td><code>fail</code></td><td>失败</td><td>下行 330→220→110</td><td>无</td><td>不要写得太悲伤，鼓励重试</td></tr>
+    <tr><td><code>ui</code></td><td>按钮点击</td><td>短促高频「叮」</td><td>无</td><td>P1</td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px;color:var(--txt2)">
+  <b>BGM（P1）</b>：建议轻快电子 / 八音盒，默认音量 0.35，且<b>球飞行期间自动 ducking 到 0.15</b>，
+  让消除音效成为主角。首版可先不做 BGM，纯音效已足够支撑手感。
+</p>
+
+<h3>12.2 特效清单</h3>
+<table>
+  <thead><tr><th style="width:16%">特效</th><th style="width:30%">实现</th><th style="width:13%">参数</th><th>调调参考</th></tr></thead>
+  <tbody>
+    <tr><td><b>方块碎裂</b></td><td>10~16 个矩形粒子，沿圆周射出 + 重力 + 旋转</td><td>0.35~0.7s</td><td>取方块本身颜色，碎片 3~8px，视觉上是「被砸碎」而非「消失」</td></tr>
+    <tr><td><b>碰撞火花</b></td><td>3~12 个圆形粒子</td><td>0.28~0.48s</td><td>墙壁白色 / 接住金色 / 漏接红色</td></tr>
+    <tr><td><b>分裂光环</b></td><td>扩散 ring，线宽随寿命衰减</td><td>0.4s，r 增 52</td><td>青色 + <code>shadowBlur</code>，强调「爆发」</td></tr>
+    <tr><td><b>小球拖尾</b></td><td>保留最近 8 个位置，半径 0.25~0.85r 递变</td><td>约 130ms</td><td>低端机可关闭，节省 8×N 次绘制</td></tr>
+    <tr><td><b>飘字</b></td><td>上浮 26px/s + 透明度衰减 + 1px 黑色描边</td><td>0.85s</td><td>+10 / +25 / SPLIT! / 接住 3 球，带信息量</td></tr>
+    <tr><td><b>屏幕震动</b></td><td><code>ctx.translate(rand × shake)</code>，按 <code>0.0025^dt</code> 衰减</td><td>1.2~8px</td><td>分级：撞壁 1.2 / 消除 1.8 / 分裂 3.5 / 漏接 4 / 通关 6</td></tr>
+    <tr><td><b>方块入场</b></td><td>逐行逐列错峰（r×0.06 + c×0.02），<code>easeOutBack</code> 缩放 0.4→1</td><td>约 0.4s</td><td>开场仪式感，同时让玩家预读布局</td></tr>
+    <tr><td><b>分裂块呼吸光</b></td><td><code>shadowBlur 14</code> + 微幅亮度脉动</td><td>持续</td><td>视觉引导：「这个方块不一样，去打它」</td></tr>
+    <tr><td><b>缺口高亮</b></td><td>缺口两侧墙壁内缘加青色边光 + 上下箭头微动</td><td>持续</td><td><b>P1 建议加</b>：直接告诉玩家「从这里进」</td></tr>
+    <tr><td><b>连击大字</b></td><td>右下角 <code>x12 COMBO</code>，6Hz 透明度脉动</td><td>连击 ≥ 2</td><td>位于接球区，不遮挡主战场</td></tr>
+  </tbody>
+</table>
+
+<h3>12.3 震动（<code>wx.vibrateShort</code>）</h3>
+<table>
+  <thead><tr><th style="width:20%">事件</th><th style="width:18%">类型</th><th style="width:14%">时长</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>撞墙壁</td><td>—</td><td>不震</td><td>频率太高，只能靠音效</td></tr>
+    <tr><td>消除方块</td><td><code>light</code></td><td>10ms</td><td>30ms 内不重复触发</td></tr>
+    <tr><td>触发分裂</td><td><code>medium</code></td><td>20ms</td><td>区分于普通消除</td></tr>
+    <tr><td>接住球</td><td><code>light</code></td><td>8ms</td><td>轻微确认感</td></tr>
+    <tr><td>漏接球</td><td><code>heavy</code></td><td>40ms</td><td>负反馈要明显</td></tr>
+    <tr><td>通关 / 失败</td><td><code>medium</code></td><td>60ms</td><td>结算浮层出现时一次</td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px;color:var(--txt2)">
+  实现约束：① 提供设置开关（部分用户反感震动）；② <b>iOS 的 <code>type</code> 参数无效</b>，只有一档强度，靠时长区分；
+  ③ 安卓低端机震动延迟高，不可作为唯一反馈；④ 同一帧内多次事件只取最强一个。
+</p>
+</section>
+
+<!-- ============================== 13 ============================== -->
+<section id="s13">
+<h2><span class="no">13</span>技术方案</h2>
+
+<h3>13.1 形态选型：微信小游戏 vs 小程序内嵌 Canvas</h3>
+<table>
+  <thead><tr><th style="width:16%">维度</th><th style="width:42%">微信<b>小游戏</b>（推荐）</th><th>小程序页面内 <code>canvas type=2d</code></th></tr></thead>
+  <tbody>
+    <tr><td>运行环境</td><td>无 DOM / window，专为游戏优化，冷启动更快</td><td>带完整小程序运行时，页面层仍是 WebView</td></tr>
+    <tr><td>性能</td><td>纯 Canvas，无排版开销，帧率稳定</td><td>Canvas 与 DOM 共存，层级合成有额外开销</td></tr>
+    <tr><td>游戏生态</td><td>游戏圈、游戏中心入口、微信游戏报、玩一玩</td><td>基本没有</td></tr>
+    <tr><td>包体上限</td><td>主包 4MB / 总包 20MB（分包）</td><td>主包 2MB / 总包 30MB</td></tr>
+    <tr><td>开发成本</td><td>需适配小游戏 API（<code>wx.*</code> 与小程序基本一致）</td><td>可复用小程序组件库</td></tr>
+    <tr><td>适用场景</td><td><b>纯游戏产品</b></td><td>游戏只是 App 的一个子功能</td></tr>
+  </tbody>
+</table>
+<div class="note good">
+  <span class="t">结论：选微信小游戏</span>
+  本项目的<b>唯一</b>功能就是游戏，不存在「页面 + 游戏」混合需求；而小游戏的<b>游戏圈 + 游戏中心分发</b>是休闲品类留存的关键。
+  本项目不使用任何 DOM 组件（结算浮层也直接画在 Canvas 上，见原型实现），因此迁移到小程序形态的成本极低。
+  <b>若需求方坚持小程序形态</b>：把 <code>game.js</code> 主循环搬到页面内的 <code>canvas type="2d"</code>，
+  UI 层（选关页 / 设置页）改用 WXML 组件即可，核心逻辑层 <code>core/*</code> 与渲染层可 100% 复用。
+</div>
+
+<h3>13.2 渲染与主循环架构</h3>
+<pre><code>requestAnimationFrame(loop)
+  └─ dt = min((ts - last)/1000, 0.033)        // 钳制，防切后台回来一次跳帧穿墙
+     ├─ Game.update(dt)                       // 纯逻辑，无渲染 API
+     │    ├─ updateParticles(dt)              // 特效层
+     │    ├─ updatePaddle(dt)                 // 插值跟随
+     │    └─ if PLAY: updateBalls(dt)         // 8 子步进物理模拟（v2：PLAY 态内持续运行，含接住回弹）
+     └─ Render.render(ctx)                    // 纯绘制，不改状态
+
+绘制顺序（由后到前）：
+  背景渐变 → 星点 → 竞技区容器 → 方块 → 接球区（漏接线/停滞警告）
+  → 弹道预测线 → 小球（含拖尾）→ 横条 → 粒子 → 连击 → HUD → 提示
+  → 结算浮层（不受震动影响，单独 save/restore）</code></pre>
+<div class="note">
+  <span class="t">逻辑与渲染严格分离</span>
+  <code>core/*</code> 不引用任何 Canvas API，因此可以<b>直接在 Node.js 里跑无头仿真</b>（§11 的配平数据就是这么来的），
+  也可以直接在浏览器原型里跑。这不是空泛的架构洁癖，而是本项目的<b>关卡平衡性测试基础设施</b>。
+</div>
+
+<h3>13.3 目录结构</h3>
+<pre><code>tantan/
+├─ game.js                  // 入口：createCanvas + 启动
+├─ game.json                // { deviceOrientation: "portrait", ... }
+├─ project.config.json
+├─ js/
+│  ├─ base/
+│  │   ├─ audio.js          // InnerAudioContext 池 + 节流
+│  │   ├─ storage.js        // 存档读写 + 版本迁移
+│  │   └─ pool.js           // 粒子/球 对象池
+│  ├─ core/                 // ★ 纯逻辑，零渲染依赖，可 Node 直跑
+│  │   ├─ config.js         // CFG / PALETTE / SCORE
+│  │   ├─ levels.js          // 关卡数据（字符串地图）
+│  │   ├─ grid.js            // 网格：isSolid / destroy / openBottom
+│  │   ├─ physics.js         // gridHit / collideWorld / normalizeSpeed
+│  │   ├─ aim.js             // updateAim / predictPath
+│  │   ├─ ball.js            // 球体 + 分裂规则
+│  │   ├─ paddle.js          // 横条跟随 / 接球判定
+│  │   └─ state.js           // 状态机（READY/PLAY/WIN/LOSE）+ 连续回弹流程 + 胜负判定
+│  ├─ render/
+│  │   ├─ scene.js           // 绘制总调度
+│  │   ├─ blocks.js / ball.js / paddle.js
+│  │   ├─ fx.js              // 粒子 / 飘字 / 震动 / 弹道线
+│  │   └─ hud.js             // HUD + 结算浮层
+│  ├─ input/touch.js         // 双模式手势（瞄准 / 摆位 / 接球）
+│  └─ wx/                    // 微信能力封装（可 mock，方便本地调试）
+│      ├─ share.js  rank.js  ad.js  lifecycle.js
+├─ tools/
+│  ├─ balance.js             // ★ 关卡平衡性回归测试（由 design/balance-sim.js 演进）
+│  └─ validate-level.js      // 地图校验：尺寸/缺口/连通性/球数(balls) 配置
+├─ images/                   // 图集（方块/小球/挡板均可程序绘制，仅需 UI 图标）
+└─ audio/</code></pre>
+
+<h3>13.4 适配与坐标映射</h3>
+<pre><code>const info = wx.getSystemInfoSync();
+const dpr  = Math.min(info.pixelRatio, 2);      // 3 倍屏收益低、成本高，钉在 2
+canvas.width  = info.windowWidth  * dpr;
+canvas.height = info.windowHeight * dpr;
+
+// 以 375 宽为基准等比缩放；高度不足时上下留黑，多出的高度补给接球区
+const scale = canvas.width / 375;
+const gameH = Math.min(canvas.height / scale, 740);   // 667 ~ 740 弹性
+ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+// 触摸坐标：event.touches[0].clientX * dpr / scale → 逻辑坐标
+// ★ 横条 Y / 漏接线 Y 按 gameH 动态计算，避开安全区底部</code></pre>
+<ul>
+  <li><b>必须竖屏</b>：<code>game.json</code> 设 <code>deviceOrientation: "portrait"</code>。</li>
+  <li><b>短屏机（iPad / 折叠屏展开）</b>：竞技区尺寸不变，多出的高度全部补给接球区 → 接球更容易（对新手友好，可接受）。</li>
+  <li><b>长屏机（iPhone 15 Pro Max）</b>：同上；HUD 需下移 <code>safeArea.top</code>，漏接线需上提避开 Home Indicator。</li>
+  <li><b>平板</b>：P2，可考虑改为固定 4:3 居中 + 两侧留白。</li>
+</ul>
+
+<h3>13.5 性能要点</h3>
+<table>
+  <thead><tr><th style="width:26%">问题</th><th style="width:36%">做法</th><th>收益</th></tr></thead>
+  <tbody>
+    <tr><td><b>每帧 <code>createLinearGradient</code></b></td><td>原型里每个方块都建渐变，正式版必须改为<b>预渲染到离屏 Canvas</b>（6 色 × 3 类 = 18 张小图），绘制时 <code>drawImage</code></td><td>方块绘制开销降约 8 倍</td></tr>
+    <tr><td><code>shadowBlur</code> 滥用</td><td>仅用于小球（≤16 次/帧）与分裂块；分裂块可改为预渲染带光晕的图</td><td><code>shadowBlur</code> 是 Canvas 最贵操作，安卓上尤甚</td></tr>
+    <tr><td>粒子数量</td><td>总粒子上限 <b>200</b>，超限丢弃最旧；使用对象池复用</td><td>避免 GC 抖动</td></tr>
+    <tr><td>静态层缓存</td><td>背景渐变 + 星点 + 容器网格<b>只画一次</b>（仅入场时重画），后续 <code>drawImage</code> 贴回</td><td>省掉每帧最贵的大面积渐变填充</td></tr>
+    <tr><td>物理开销</td><td>已为 O(1)/球：16 球 × 8 子步进 × ≤4 格 = 512 次检测/帧</td><td>无需空间划分结构</td></tr>
+    <tr><td>音频实例</td><td><code>InnerAudioContext</code> 实例池（高频音效最多 4 个）+ 节流，避免同时创建十几个实例</td><td>避免呲呲爆音与内存泄漏</td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px;color:var(--txt2)">
+  <b>性能预算</b>：中端机（骁龙 765G / 天玑 800 等级）稳定 60fps，单帧 CPU 开销小于 6ms；
+  低端机可降级：关拖尾 → 同屏球上限 16→12 → 粒子上限 200→80 → 锁 30fps。
+</p>
+
+<h3>13.6 微信能力接入</h3>
+<table>
+  <thead><tr><th style="width:20%">能力</th><th style="width:22%">API</th><th>接入要点</th></tr></thead>
+  <tbody>
+    <tr><td>登录</td><td><code>wx.login</code> → <code>code</code> 换 openid</td><td>游客可直接玩，<b>不阻断首局</b>；上传分数时再要求</td></tr>
+    <tr><td>分享</td><td><code>wx.shareAppMessage</code> / <code>onShareAppMessage</code></td><td>三星通关自动弹分享卡片（带星级 + 得分）；卡关失败时提供「看广告得次数」而非分享</td></tr>
+    <tr><td>好友排行</td><td><b>开放数据域</b> <code>wx.getFriendCloudStorage</code></td><td>排行榜必须画在 <code>SharedCanvas</code> 上，在主域 <code>draw</code> 子域 canvas；这是微信最踩坑的点，需预留 1.5 人天</td></tr>
+    <tr><td>数据同步</td><td><code>wx.setUserCloudStorage</code></td><td>上报：最高关卡、总星数、单关最佳得分、最高连击</td></tr>
+    <tr><td>游戏圈</td><td>游戏圈入口（小游戏专属）</td><td>P1，留存有效手段</td></tr>
+    <tr><td>激励视频</td><td><code>wx.createRewardedVideoAd</code></td><td>广告关闭回调里<b>必须（<code>res.isEnded</code>）判完播</b>才发奖；预加载下一个广告实例</td></tr>
+    <tr><td>生命周期</td><td><code>onHide</code> / <code>onShow</code></td><td>后台自动暂停主循环并<b>停止音效</b>；回前台重置 <code>last</code> 时间戳防止跳帧穿墙</td></tr>
+    <tr><td>订阅消息</td><td><code>requestSubscribeMessage</code></td><td>P2，体力/每日挑战回流</td></tr>
+  </tbody>
+</table>
+
+<h3>13.7 关键代码骨架</h3>
+<pre><code>// js/game.js
+const canvas = wx.createCanvas();
+const ctx = canvas.getContext('2d');
+fitScreen(canvas, ctx);
+
+const game = new Game(ctx);
+let last = 0;
+function loop(ts) {
+  const dt = Math.min((ts - last) / 1000, 0.033);
+  last = ts;
+  game.update(dt);        // 纯逻辑
+  game.render();          // 纯绘制
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// js/core/physics.js  —— 一个子步内的完整碰撞解算
+function collideWorld(b) {
+  switchZone(b);                       // catch ⇄ arena
+  hitContainerWall(b);                 // 左/右（两区）+ 顶（仅 arena）
+  const hit = gridHit(b.x, b.y, b.r);  // 取穿透最深的一个单元
+  if (hit) {
+    if (isDestructible(hit.cell.type)) { destroy(hit, b); reflect(b, hit.n); }
+    else                               { reflect(b, hit.n); spark(b); }
+    pushOut(b, hit);                   // 陷入时按最小穿透轴推出
+    normalizeSpeed(b);                 // 重归一 + 9% 分量下限防退化
+  }
+  if (b.zone === 'catch') hitPaddleOrDeath(b);
+}
+
+// design/balance-sim.js  —— 关卡平衡性回归门禁（已交付，改关卡后必跑）
+//   node design/balance-sim.js 250 250 20261020     → 退出码 0 = 通过
+// design/seed-check.js   —— 跨种子复核，防「挑一个好种子把门禁哄过去」（见 §11.3）
+//   node design/seed-check.js                       → 退出码 0 = 30 组逐组均不越界
+Math.random = mulberry32(SEED);                      // ① 必须固定种子，否则 ±3~9pp 抽样抖动会让门禁时过时不过
+for (const lv of levels) {
+  for (const skill of [0.55, 0.9]) {
+    const r = simulate(lv, skill, N);                // N = 250 局（低于 250 时极差会大到无法当结论）
+    const bd = bounds(bandFor(lv.id), skill);        // ② v2 单地板：新手只校 floor（≥60/50/45），熟练只校全局兜底 ≥40%，不设 ceil（见 §9.4）
+    assert(r.winRate &gt;= bd.lo &amp;&amp; r.winRate &lt;= bd.hi, `${lv.id} 难度越界`);
+    assert(r.stuck === 0, `${lv.id} 存在卡死`);
+  }
+}
+// ③ 玩家模型必须带人类约束（REACT 反应粒度 + ERR 落点误差），
+//    否则它是一个完美接球机器，漏接率恒为 0、难度被系统性低估（见 §11.1）</code></pre>
+<div class="note warn">
+  <span class="t">四个必须写进代码注释的坑（原型已踩过）</span>
+  ① <b>球心陷入方块</b>时「最近点 = 球心」，法线无定义，必须按最小穿透轴处理，否则球卡死；<br>
+  ② <b>反退化</b>：不限制速度分量下限，球会在矩形容器内永远镜面循环、永不离场，回合卡死；<br>
+  ③ <b>摆位手势（拖横条）与发射手势（拖空白）必须分离</b>：若横条在发射时跟随手指 X，「横条中心→手指」连线会永远竖直、斜射根本无法实现（v2 已删方向虚线，但双模式分离仍适用）；<br>
+  ④ <b>胜利判定不能只挂在「球落完才结算」上</b>：反退化与超时开底都覆盖不了「单个墙块 + 容器顶壁」的垂直乒乓陷阱，
+  球会在墙块顶面与顶壁之间永久往复、永不离场——v2 无回合概念但同一陷阱仍在（球被无限接住回弹、永不落地）。
+  因此必须在<b>消除最后一个方块的瞬间即时 <code>finish(true)</code></b>，并以停滞 22s + 硬超时 240s 双保险强制开底排空（见 §11.5 的 V3 / §8.4）。
+</div>
+</section>
+
+<!-- ============================== 14 ============================== -->
+<section id="s14">
+<h2><span class="no">14</span>开发排期</h2>
+<table>
+  <thead><tr><th style="width:9%">阶段</th><th style="width:15%">内容</th><th style="width:11%">人天</th><th style="width:34%">交付物</th><th>验收标准</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>M0</b><br>已完成</td><td>玩法原型</td><td>—</td>
+      <td><code>design/prototype.html</code> + 本设计稿 + 无头仿真脚本</td>
+      <td>✅ 物理 0 异常（0 卡死 / 0 穿透）；通关率新手 60%~80%、熟练 75%~85%，均落在 v2 单地板区间，门禁退出码 0 且可复现（固定种子）；可直接交给需求方试玩验证手感</td>
+    </tr>
+    <tr>
+      <td><b>M1</b><br>第 1 周</td><td>工程脚手架 + 核心玩法</td><td>5</td>
+      <td>小游戏工程初始化；<code>core/*</code> 从原型迁移；触摸手势；双区物理；碰撞反弹；消除与胜负判定</td>
+      <td>真机能完整打一关：发射→反弹→消除→逸出→接住→通关</td>
+    </tr>
+    <tr>
+      <td><b>M2</b><br>第 2 周</td><td>手感层</td><td>5</td>
+      <td>弹道预测线 + 入射反馈；分裂机制；粒子/飘字/震动；音效；方块入场动画；异形屏适配</td>
+      <td><b>手感验收点</b>：邀请 5 人盲测，无人因「不知道怎么打进去」而卡关</td>
+    </tr>
+    <tr>
+      <td><b>M3</b><br>第 3 周</td><td>关卡与元游戏</td><td>6</td>
+      <td>30 关数据；选关页；星级/存档/解锁；暂停与设置；结算页；把已完成的 <code>design/balance-sim.js</code> 扩展成 30 关回归并接入 CI</td>
+      <td>30 关跑分均落在 §9.4 的 v2 单地板区间（新手 floor、熟练全局兜底≥40%，不设无聊上限），<b>且跨 3 个种子重跑退出码均为 0</b>；无卡关/死局</td>
+    </tr>
+    <tr>
+      <td><b>M4</b><br>第 4 周</td><td>UI 美术接入</td><td>5</td>
+      <td>按 <code>ui-mockups.html</code> 出图；图标/字体/背景替换程序绘制；启动页与主页</td>
+      <td>与视觉稿一致度≥ 90%；离屏缓存后帧率不降</td>
+    </tr>
+    <tr>
+      <td><b>M5</b><br>第 5 周</td><td>微信能力</td><td>5</td>
+      <td>登录、分享卡片、好友排行（开放数据域）、激励视频复活、生命周期</td>
+      <td>排行榜在真机可见好友数据；广告完播才发奖</td>
+    </tr>
+    <tr><td><b>M6</b><br>第 6 周</td><td>性能与兼容</td><td>3</td><td>低端机降级开关；帧率面板；内存火焰图；真机 20+ 台回归</td><td>中端机 60fps；冷启动 &lt; 2.5s；主包 &lt; 4MB</td></tr>
+    <tr><td><b>M7</b><br>第 7 周</td><td>埋点与提审</td><td>3</td><td>埋点接入；软启动（5~20 关）；提审材料与类目</td><td>核心漏斗数据可查</td></tr>
+    <tr><td><b>M8</b><br>第 8 周</td><td>上线</td><td>2</td><td>分阶段发布；监控报警；热更关卡数据</td><td>崩溃率 &lt; 0.1%</td></tr>
+  </tbody>
+</table>
+<div class="grid4">
+  <div class="kpi c"><div class="n">39</div><div class="l">人天（约 8 周 / 1 人）</div></div>
+  <div class="kpi y"><div class="n">20</div><div class="l">人天可并行（2 人则 5~6 周）</div></div>
+  <div class="kpi g"><div class="n">M2</div><div class="l">建议在此设试玩门禁</div></div>
+  <div class="kpi p"><div class="n">30</div><div class="l">M3 关卡数量</div></div>
+</div>
+<div class="note warn">
+  <span class="t">两个高风险项，建议提前验证</span>
+  ① <b>好友排行榜的开放数据域</b>（M5）：必须把排行榜画在 <code>SharedCanvas</code> 子域上，与主域渲染体系不同，
+  新手很容易在这里卡 2~3 天；<br>
+  ② <b>小游戏类目与资质</b>（M7）：微信小游戏需<strong>《网络文化经营许可证》</strong>与游戏版号/备案（休闲小游戏有简化通道），
+  <b>建议第一周就启动申请</b>，否则开发完成也上不了线。
+</div>
+</section>
+
+<!-- ============================== 15 ============================== -->
+<section id="s15">
+<h2><span class="no">15</span>数据埋点与核心指标</h2>
+
+<h3>15.1 埋点事件</h3>
+<table>
+  <thead><tr><th style="width:22%">事件</th><th style="width:34%">上报字段</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>game_start</code></td><td>levelId, isFirst, source</td><td>入口分析、冷启动转化</td></tr>
+    <tr><td><code>shot</code></td><td>levelId, angle, paddleX, ballsLeft, enteredGap</td><td><b>最关键</b>：统计“能否穿缺口”失败率，验证 §9 难度假设</td></tr>
+    <tr><td><code>rebound</code><br><small>（v2 取代 round_end）</small></td><td>levelId, chainLen（同一颗球连续回弹次数）, caughtBalls, paddleVX</td><td><b>v2 核心玩法诊断</b>：回弹链长度分布反映玩家对“拖动方向控制”的熟练度；链过短（&lt;5）说明接住回弹没被用起来，需查挡板跟手感/落球速度</td></tr>
+    <tr><td><code>lose_cause</code><br><small>（v2 建议新增）</small></td><td>levelId, remainingBricks, lostBalls, stallOpenCount, timeout240</td><td>失败归因：3 颗球全漏 / 停滞开底 / 240s 硬超时；同时统计开底触发（仿真基线 0.15~0.4 次/局）与漏接率（仿真基线 1.9%~3.0%）监控“接球无风险”问题（§11.7①）</td></tr>
+    <tr><td><code>split_hit</code></td><td>levelId, ballCountAfter</td><td>验证分裂块是否真的带来火力曲线上升</td></tr>
+    <tr><td><code>game_win/lose</code></td><td>levelId, leftShots, stars, score, retryCount</td><td>逐关通关率 + 放弃率 → 难度热力图</td></tr>
+    <tr><td><code>ad_show/ad_reward</code></td><td>levelId, scene, isEnded</td><td>商业化 ARPU 与完播率</td></tr>
+    <tr><td><code>share</code></td><td>levelId, stars, from</td><td>裂变系数 K</td></tr>
+    <tr><td><code>perf</code></td><td>fpsAvg, fpsLow, memMax, model</td><td>机型分级与降级策略依据</td></tr>
+  </tbody>
+</table>
+
+<h3>15.2 北极星指标与护栏</h3>
+<table>
+  <thead><tr><th style="width:26%">指标</th><th style="width:20%">目标值</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><b>北极星：次日留存</b></td><td>≥ 35%</td><td>休闲消除类小游戏及格线；关卡星级 + 每日挑战驱动</td></tr>
+    <tr><td>首局完成率</td><td>≥ 80%</td><td>第 1 关必须几乎不会失败，否则直接丢掉一半用户。<b>已由仿真验证</b>：新手档 80%（跨 5 种子均值 77.6%，最差种子 72%）</td></tr>
+    <tr><td>单局时长</td><td>54~123s</td><td>v2 连续回弹制下仿真胜局均耗时：L1≈62s、L2≈91~100s、L3≈111~124s，耗时随方块数（101/167/212）递增，星级据此评定（§10.2）。<b>比 v1 的 20~40s 回合长得多</b>——这是“上百方块 + 3 球 + 连续回弹”的必然代价，需求方已接受</td></tr>
+    <tr><td>平均局数 / 人 / 日</td><td>≥ 6</td><td>反映关卡节奏与“再试一次”吸引力</td></tr>
+    <tr><td>第 N 关流失峰</td><td>无单点尖峰</td><td><b>护栏</b>：某关重试次数均值 &gt; 5 即难度过高，需放宽或加广告复活。<b>注意：仿真预测第 3 关会是首个峰</b>（新手 60%，为三关最低）—— 212 方块 + 8 格窄口最难，上线后需重点盯这一关</td></tr>
+    <tr><td>穿缺口失败率</td><td>≤ 25%</td><td><b>护栏</b>：高于此值说明入射角容差过严，需加宽缺口</td></tr>
+    <tr><td>漏接率</td><td>20~35%</td><td>过低→接球无意义；过高→玩法令人沮丧。<br>
+        <b style="color:var(--yellow)">❗ 目标仍未达成</b>：v2 仿真实测 <b>1.9% ~ 3.0%</b>，虽高于 v1（0.2%~1.5%，因 v2 漏接即永久损失 3 颗配额之一、代价变重），但仍低于目标带。
+        v2 接住回弹已是维持回弹链与连击的核心，但尚未形成“漏接风险”——缓解方向见 <b>§11.7 的第 ① 条</b>，<b>需需求方试玩后拍板</b></td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ============================== 16 ============================== -->
+<section id="s16">
+<h2><span class="no">16</span>待确认问题与风险</h2>
+
+<h3>16.1 v2 已拍板项与残留待确认<span class="tag ok">多数已定</span></h3>
+<p style="font-size:13px;color:var(--txt2);margin-bottom:10px">
+  v1 曾把下面 7 条列为“需需求方拍板”。<b>v2 需求方已就其中 5 条直接拍板</b>（见各行“v2 结论”），仅剩 2 条待试玩确认。
+</p>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:28%">问题</th><th style="width:30%">v1 备选项</th><th>v2 结论</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><b>缺口宽度</b></td><td>A. 3 格（±22°）&nbsp;&nbsp;B. 2 格&nbsp;&nbsp;C. 逐关递增</td><td style="color:var(--green)"><b>✅ v2 定 C：逐关递增收窄</b>——30 列下 L1 12 格(±14.0°) / L2 10 格(±11.5°) / L3 8 格(±8.9°)，重心靠回弹链而非穿洞</td></tr>
+    <tr><td>2</td><td><b>接球环节到底要不要？</b></td><td>A. 保留&nbsp;&nbsp;B. 自动回收&nbsp;&nbsp;C. 保留但失败不扣资源</td><td style="color:var(--green)"><b>✅ v2 定 A（强化版）：接住不转弹药、沿拖动方向继续回弹</b>——接球从“可选”变核心。残留：漏接率仅 1.9%~3.0%（§11.7①），<b>待试玩确认是否需收紧接球难度</b></td></tr>
+    <tr><td>3</td><td><b>物理模型</b>：接球区匀速直线还是抛物线？</td><td>A. 无重力直线&nbsp;&nbsp;B. 接球区加重力</td><td style="color:var(--green)"><b>✅ v2 定 A：全场景无重力匀速</b>，预测点列 = 真实轨迹，接住回弹方向可精确控制</td></tr>
+    <tr><td>4</td><td><b>停滞排空机制</b></td><td>A. 超时开底(14s)&nbsp;&nbsp;B. 限定反弹次数</td><td style="color:var(--green)"><b>✅ v2 重定义：停滞 22s（无消除即开底）+ 240s 硬超时双保险</b>；场均开底已降到 0.15~0.4 次，回归低频兜底</td></tr>
+    <tr><td>5</td><td><b>发射次数用尽但接球失败时是否“保底补 1 球”</b></td><td>A. 接受（v1 已实现）&nbsp;&nbsp;B. 全漏完判负</td><td style="color:var(--green)"><b>✅ v2 删除“保底补 1 球”</b>：弹药与同屏球是两个独立概念，不再存在“次数还剩但无球可发”的死锁，无需保底；3 球漏完且有方块→判负</td></tr>
+    <tr><td>6</td><td><b>产品形态</b>：微信小游戏还是小程序页面内 Canvas？</td><td>A. 小游戏（推荐）&nbsp;&nbsp;B. 小程序</td><td style="color:var(--yellow)"><b>⏳ 仍默认 A</b>，待需求方确认。核心代码两者通用，影响 M5 排期</td></tr>
+    <tr><td>7</td><td><b>是否需要“一杆进洞”类高级技巧奖分</b></td><td>A. 要&nbsp;&nbsp;B. 不要</td><td style="color:var(--yellow)"><b>⏳ 仍默认 B（本期不做）</b>，待需求方确认</td></tr>
+  </tbody>
+</table>
+
+<h3>16.2 已识别风险</h3>
+<table>
+  <thead><tr><th style="width:8%">等级</th><th style="width:28%">风险</th><th style="width:34%">影响</th><th>规避措施</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tag p0">高</span></td><td><b>接住回弹作为核心机制不被接受</b></td><td>v2 把“接住即继续回弹”上升为核心玩法（不再是回合制）。休闲玩家可能觉得“拖横条控回弹方向”烦、打断消除节奏。<br>
+        <b>仿真侧现状</b>：漏接率 1.9%~3.0%，高于 v1（漏一颗即永久损失 3 球之一）但仍偏低——尚未形成“漏接风险”，接球环节可能仍只是打扰</td><td><b>M2 必须做真人试玩门禁</b>：重点感受“接住回弹”是“爽”还是“烦”；若保留需同时按 <b>§11.7①</b> 收紧接球难度（收窄挡板/加快落球），让漏接代价可感知（v2 接球直接影响生存，不再有回合制可退）</td></tr>
+    <tr><td><span class="tag p1">中</span></td><td><b>拖动方向控制的学习曲线</b><br><small>v2 取代 v1“连射原点污染”</small></td><td>v1 的 <code>spawnQueue</code> 连射原点耦合问题在 v2 <b>自然消解</b>（每颗球由玩家逐个发射，无队列）。新风险是：接住回弹靠 <code>vx += paddle.vx × 0.55</code> 注入横向分量，
+        玩家需理解“往哪拖就把球弹向哪”；若跟手不足，回弹方向不可预期、链子维持不住</td><td>弹道预测点列 + 挡板插值跟随（<code>dt×22</code>）降低操作门槛；M2 加 <code>rebound</code> 埋点（<b>§15.1</b>）观察回弹链长度，链过短则加强接住回弹引导（教学/箭头提示）</td></tr>
+    <tr><td><span class="tag p0">高</span></td><td><b>封闭容器球长时间绕不出来</b></td><td>球进去后可能反复弹同一区域、碰不到其余方块。v2 无回合边界，连续回弹可能出现“球永不落地却也不清屏”。<br>
+        <b>仿真侧现状</b>：1500 局 <b>0 卡死</b>（反退化 + 即时判胜 + 停滞开底已生效）；场均开底仅 0.15~0.4 次，但收敛仍靠 240s 硬超时兜底</td><td>v2 已用<b>停滞 22s 开底 + 240s 硬超时</b>双保险（§8.4）；<b>补充建议</b>：P1 加“同一方块 3 次命中后自动消除邻近”或“连续 8 次未命中新方块则引导弹道”的软援助，缓解“打不动”的挫败</td></tr>
+    <tr><td><span class="tag p1">中</span></td><td><b>关卡设计产能</b></td><td>30 关人工摆图 + 平衡回归很慢，且容易重复</td><td>开发<b>可视化关卡编辑器</b>（浏览器 HTML，复用原型渲染层，导出 map 字符串），约 1.5 人天，强烈建议列入 M3</td></tr>
+    <tr><td><span class="tag p1">中</span></td><td><b>安卓中低端帧率</b></td><td>16 球 + 拖尾 + shadowBlur 在低端机可能掉到 30fps</td><td>离屏缓存 + 分级降级开关（拖尾/上限/粒子）；<code>perf</code> 埋点驱动阈值</td></tr>
+    <tr><td><span class="tag p1">中</span></td><td><b>资质与类目</b></td><td>无证不得上线，周期不可控</td><td><b>第一周并行启动</b>文网文 + 备案申请</td></tr>
+    <tr><td><span class="tag p2">低</span></td><td><b>玩法同质化</b></td><td>弹球消除赛道成熟，买量成本高于新品类</td><td>强化差异化：“封闭容器 + 单一缺口”的台球式策略；美术上走糖果弹珠风避开同类观感</td></tr>
+  </tbody>
+</table>
+
+<h3>16.3 建议的下一步</h3>
+<div class="card">
+  <ol style="margin-bottom:0">
+    <li><b>请需求方在真机上试玩 <a href="prototype.html">可玩原型</a></b>（建议用手机扫二维码或用手机浏览器直接打开），重点感受三件事：
+      ① 穿缺口“能不能进得去”是否令人着急；② 接球是“爽”还是“烦”；③ 分裂时的爆发感够不够。</li>
+    <li>确认 <b>§16.1 剩余两项</b>（⑥ 产品形态、⑦ 技巧奖分），并试玩反馈 <b>② 接住回弹的接球难度</b>是否需收紧（§11.7①）。</li>
+    <li>确认产品形态与上线目标时间，我按 §14 排期拆解到周，并先交付<b>可视化关卡编辑器</b>。</li>
+  </ol>
+</div>
+</section>
+
+<footer>
+  弹弹消消乐 · 游戏设计稿 v2.0（v1→v2 变更见 <code>specs/design-v2-changes.md</code>）
+  &nbsp;|&nbsp; 配套：<a href="prototype.html">可玩交互原型</a> · <a href="ui-mockups.html">界面视觉稿</a>
+  &nbsp;|&nbsp; 所有数值均为无头仿真实测或已写入 <code>prototype-data.js</code> 的实际配置，非估算。
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('#nav a[href^="#"]'));
+  var map = links.map(function (a) {
+    var el = document.querySelector(a.getAttribute('href'));
+    return { a: a, el: el };
+  }).filter(function (o) { return o.el; });
+
+  function onScroll() {
+    var y = window.scrollY + 120, cur = map[0];
+    for (var i = 0; i < map.length; i++) {
+      if (map[i].el.offsetTop <= y) cur = map[i];
+    }
+    map.forEach(function (o) { o.a.classList.toggle('on', o === cur); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>

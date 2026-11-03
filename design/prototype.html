@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>弹弹消消乐 · 可玩交互原型</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0B0D1F;
+    color: #E8EAF6;
+    display: flex;
+    overflow: hidden;
+  }
+  /* ---------- 左侧：手机画面 ---------- */
+  .stage-wrap {
+    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; height: 100vh;
+  }
+  #phone {
+    position: relative;
+    padding: 10px;
+    border-radius: 34px;
+    background: linear-gradient(160deg, #2A2E4A, #14162B);
+    box-shadow: 0 24px 60px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.08);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #stage {
+    display: block;
+    border-radius: 26px;
+    background: #141634;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  /* ---------- 右侧：控制面板 ---------- */
+  .panel {
+    flex: 1 1 auto;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 26px 60px;
+    border-left: 1px solid rgba(255,255,255,.07);
+    background: linear-gradient(180deg, #12142A, #0B0D1F);
+  }
+  .panel h1 { font-size: 19px; margin: 0 0 4px; letter-spacing: .5px; }
+  .panel .sub { font-size: 12px; color: rgba(255,255,255,.45); margin: 0 0 20px; }
+  .card {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 12px; margin: 0 0 12px; color: #8FA0FF;
+    letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: inherit;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.07);
+    color: #E8EAF6;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: .15s;
+  }
+  button:hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+  button:active { transform: translateY(0); }
+  button.primary { background: linear-gradient(135deg,#FFD93D,#FF9F43); color:#2A2140; border-color:transparent; font-weight:700; }
+  button.off { opacity: .45; }
+  .lv { position: relative; min-width: 96px; text-align: left; }
+  .lv.active { background: linear-gradient(135deg,#6C7BFF,#8B4CF0); border-color: transparent; color:#fff; font-weight:700; }
+  .lv .lv-star { display:block; font-size: 9px; color:#FFD93D; letter-spacing:1px; margin-top:2px; min-height:10px; }
+
+  table.stats { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.stats td { padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,.07); }
+  table.stats td:first-child { color: rgba(255,255,255,.5); width: 44%; }
+  table.stats td:last-child { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .v.phase-play { color: #FFD93D; }
+  .v.phase-ready { color: #7BEFC0; }
+  .v.phase-win { color: #7BEFC0; }
+  .v.phase-lose { color: #FF8A7A; }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12px; }
+  .slider-row label { flex: 0 0 92px; color: rgba(255,255,255,.55); }
+  .slider-row input[type=range] { flex: 1 1 auto; accent-color: #8B7BFF; }
+  .slider-row .val { flex: 0 0 62px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; color:#B9C4FF; }
+
+  ol.guide { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.85; color: rgba(255,255,255,.72); }
+  ol.guide b { color: #FFD93D; }
+  .legend { display:flex; flex-direction:column; gap:8px; font-size:12.5px; color:rgba(255,255,255,.72); }
+  .legend i { display:inline-block; width:16px; height:16px; border-radius:4px; margin-right:9px; vertical-align:-3px; }
+  .tipbar { font-size: 11.5px; color: rgba(255,255,255,.4); line-height: 1.7; }
+  a.back { color:#8FA0FF; font-size:12px; text-decoration:none; }
+  a.back:hover { text-decoration: underline; }
+  @media (max-width: 900px) {
+    body { overflow: auto; flex-direction: column; }
+    .stage-wrap { height: auto; }
+    .panel { height: auto; border-left: none; border-top: 1px solid rgba(255,255,255,.07); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage-wrap">
+  <div id="phone">
+    <canvas id="stage" width="375" height="667"></canvas>
+  </div>
+</div>
+
+<div class="panel">
+  <a class="back" href="index.html">← 返回设计稿总览</a>
+  <h1>弹弹消消乐 · 可玩交互原型 v0.7（规则 v7）</h1>
+  <p class="sub">Canvas 2D 真实物理实现 · 逻辑分辨率 375×667 仅是设计基准 · 30 列网格 · 每关 3 球 · 耗时评星 · 钻石钱包 + 主动道具栏 + 主页/暂停 · v7：形状垂直居中 + 道具块统一蓝紫底(图标区分) + 倒计时移至横条 + 接球区 420 + 墙壁纯色</p>
+
+  <div class="card">
+    <h2>操作方式（v2）</h2>
+    <ol class="guide">
+      <li><b>瞄准</b>：在<b>空白处</b>按住并移动 → 只显<b>真实弹道预测点列</b>（已按要求去掉挡板→手指的虚线）。<span style="color:#7CF6FF">青色</span> = 能命中可消方块；<span style="color:#FF8A7A">红色 + ✕</span> = 预测内撞不到任何方块（等于空放）。</li>
+      <li><b>发射</b>：瞄准后松手即射出，消耗 1 次发射机会；每关共 <b>3 颗球 = 3 次机会</b>，可不等落地马上连发。</li>
+      <li><b>接球回弹</b>：球落回时按住<b>横条</b>拖动 → 接住后球<b>朝你拖动的方向继续弹回去</b>（不再变成弹药），回弹链可以无限延续。</li>
+      <li><b>胜负</b>：方块全消即胜（按耗时评 1~3 星）；3 次机会用完且场上球全部漏完即败；连续 22s 无消除或关卡超 240s 会开底排空。</li>
+      <li>也可用下方 ◀ ▶ 按钮微调挡板。</li>
+      <li><b>钻石钱包</b>（v5 需求①）：每次结束按获得星数 +N 颗钻石（1 星 = 1 钻），写入本地钱包，持久化。</li>
+      <li><b>主动道具栏</b>（v5 需求②）：横条下方三个按钮—全部分裂/墙体隐藏/挡板放大，显示持有数量。<b>数量 &gt; 0</b> 点击立即使用一次；<b>为 0</b> 点击弹窗引导购买（分裂 2 钻、墙体隐藏 1 钻、挡板放大 1 钻）。</li>
+      <li><b>暂停</b>（v5 需求③）：右上角 ⏸ 按钮 → 弹窗可选「继续游戏 / 回到主页 / 关闭声音」；主页点「开始游戏」重新开局。</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>关卡选择</h2>
+    <div class="row" id="levelRow">
+      <!-- 关卡按钮由 prototype-main.js 依据 TT.LEVELS 动态注入，无需在此硬编码 -->
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="btnLeft">◀ 挡板左移</button>
+      <button id="btnRight">挡板右移 ▶</button>
+      <button id="btnShoot" class="primary">随机发射</button>
+      <button id="btnRestart">重开本关</button>
+      <button id="btnSound">🔊 音效开</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>实时状态</h2>
+    <table class="stats">
+      <tr><td>当前阶段</td><td class="v" id="stPhase">—</td></tr>
+      <tr><td>剩余发射机会</td><td id="stShots">—</td></tr>
+      <tr><td>关卡耗时（评星依据）</td><td id="stHeld">—</td></tr>
+      <tr><td>同屏飞行球数</td><td id="stBalls">—</td></tr>
+      <tr><td>消除进度</td><td id="stDestroyed">—</td></tr>
+      <tr><td>当前连击</td><td id="stCombo">—</td></tr>
+      <tr><td>距超时开底</td><td id="stRound">—</td></tr>
+      <tr><td>底部缺口</td><td id="stGap">—</td></tr>
+      <tr><td>挡板中心 x（发射点）</td><td id="stPaddleX">—</td></tr>
+      <tr><td>得分</td><td id="stScore">0</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>数值调参（实时生效）</h2>
+    <div class="slider-row"><label>小球速度</label><input type="range" id="pSpeed" min="240" max="760" step="10" value="500"><span class="val" id="pSpeedV"></span></div>
+    <div class="slider-row"><label>关卡硬超时</label><input type="range" id="pStall" min="60" max="300" step="10" value="180"><span class="val" id="pStallV"></span></div>
+    <div class="slider-row"><label>同屏球上限</label><input type="range" id="pMaxBalls" min="4" max="32" step="1" value="16"><span class="val" id="pMaxBallsV"></span></div>
+    <div class="slider-row"><label>挡板宽度</label><input type="range" id="pPaddleW" min="40" max="160" step="2" value="120"><span class="val" id="pPaddleWV"></span></div>
+    <div class="slider-row"><label>最大瞄准角</label><input type="range" id="pAngle" min="40" max="88" step="1" value="78"><span class="val" id="pAngleV"></span></div>
+    <p class="tipbar">这些参数即为正式版需要交给策划配置的「手感参数」，建议在真机上按 375×667 基准等比换算。</p>
+  </div>
+
+  <div class="card">
+    <h2>元素图例</h2>
+    <div class="legend">
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>可消除方块 <b>B</b> · 命中 1 次即消除（v4 需求①：统一单一天蓝色）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>不可消除墙壁 <b>W</b> · 完美镜面反弹（v7 需求⑤：纯背景色，已去铆钉白点）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>分裂道具方块 <b>S</b> · 蓝紫底 + <b>两个白点</b>（v7 需求③，消除后原坐标一分为二）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>三分裂道具方块 <b>T</b> · 蓝紫底 + <b>三个白点</b>（v7 需求③）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>生命道具方块 <b>L</b> · 蓝紫底 + <b>白色爱心</b>（消除后剩余发射 +1）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>爆炸道具方块 <b>X</b> · 蓝紫底 + <b>橙色炸弹</b>（消除后清空 3×3）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>挡板道具方块 <b>P</b> · 蓝紫底 + <b>绿色实心横条</b>（消除后挡板满宽 30s，横条上方倒计时）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>快速球道具方块 <b>F</b> · 蓝紫底 + <b>白色双箭头</b>（消除后原坐标一颗双倍速球）</div>
+      <div><i style="background:linear-gradient(180deg,#9DB0FF,#5566DE)"></i>隐形道具方块 <b>G</b> · 蓝紫底 + <b>白色幽灵</b>（消除后方块区墙壁隐形 10s）</div>
+      <div><i style="background:#fff;border-radius:50%"></i>小球 · 无重力匀速；进方块区 500px/s，方块区下方(接球区) 420px/s</div>
+      <div><i style="background:linear-gradient(180deg,#FFE07A,#FF9F43);border-radius:8px;height:8px"></i>横条挡板 · 发射点 + 接球工具（道具块消除即生效，无需接住）</div>
+      <div><i style="background:rgba(255,255,255,.14);height:8px;border-radius:8px"></i>滑动轨道 · 球落到轨道(横条外)即判漏接（v4 需求③，取消旧漏接线）</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>原型已实现的规则（v7）</h2>
+    <p class="tipbar">
+      ① 双区物理：竞技区无重力匀速镜面反弹（弹道可 100% 预测）；接球区匀速直线 + 挡板拦截。<br>
+      ② 30 列×22 行网格（需求拍板）：单块 11.7px@375 基准，单关可消方块 101~212 个。<br>
+      ③ 每关 3 颗球 = 3 次发射机会，可立即连发；接住<b>不回收弹药</b>，而是沿横条拖动方向直接回弹（拖动速度注入 ±78° 限角）。<br>
+      ④ 胜 = 方块全消；败 = 3 次机会用完且场上球全部漏完；球落到滑轨轨道（横条外）即判漏接，永久消失。<br>
+      ⑤ 星级按通关耗时评定（HUD 实时耗时，开场自动计时）；废弃「剩余次数比例」评星。<br>
+      ⑥ 收敛保障：仅保留关卡硬超时 180s → 开底排空（v3 已移除停滞倒计时；开底期间接住不再回弹）。<br>
+      ⑦ 子步进 8 次 + 最近点法线求解，杜绝高速穿透（900px/s 压测 0 异常）；分裂冷却 0.12s + 同屏 16 球上限。<br>
+      ⑧ 瞄准反馈：已按要求删除瞄准虚线，只保留渐隐弹道预测点列 + 首命中圈。<br>
+      ⑨ 进度/星级写入 localStorage；配平门禁：node design/balance-sim.js + seed-check.js 退出码 0。<br>
+      ⑩ 道具方块消除即生效：消除道具块后直接在原坐标发挥效果，不再掉落悬浮块。占比固定为可消除方块的 <b>6%</b>（v7 需求④），加权：分裂二球1成·分裂三球3成·爆炸1成·生命1成·横条加强3成·隐形1成（快速球不再随机投放）；<b>方块区无墙壁时不投放隐形</b>（v7 需求①）。道具消除时的提示文字改为在<b>原方块位置</b>弹出（v7 需求②）。<br>
+      ⑪ 钻石钱包（v5 需求①）：每次结束按获得星数补发钻石（1 星 = 1 钻）并本地持久化，主页 / 结算 / 道具栏上方均显示余额。<br>
+      ⑫ 主动道具栏（v5 需求②）：横条下方「全部分裂 / 墙体隐藏 / 挡板放大」，持有数量 &gt;0 点击直接生效、=0 点击弹购买窗（分裂 2 钻、其余各 1 钻）。<br>
+      ⑬ 主页与暂停（v5 需求③）：右上角暂停 →「继续游戏 / 回到主页 / 开关声音」；启动先进主页，点「开始游戏」进关。<br>
+      ⑭ 仅方块区抖动（v6 需求1）：命中/爆炸的屏幕抖动只作用于方块区（竞技区框+方块），背景/HUD/挡板/道具栏不再整屏晃动。<br>
+      ⑮ 挡板中心倒计时（v6 需求2 / v7 需求①）：挡板变宽时长 30s，触发时倒计时改显示在<b>横条中间</b>上方（跟随横条中心，数字轻微抖动，末 3s 变红闪烁）。<br>
+      ⑯ 提示统一（v6 需求3）：所有居中浮动提示统一白色同字号文字、依次向上堆叠，每条 1.5s 后消失（最多 4 条 FIFO）。<br>
+      ⑰ 球速调整（v6 需求4 / v7 需求④）：小球进入方块区速度 500px/s，方块区下方(接球区) 420px/s（CATCH_SPEED_K=0.84，逸出即减速留反应时间）。<br>
+      ⑱ 收窄缺口（v6 需求5）：每关底部墙体缺口连续 EMPTY 段按 GAP_MAX_CELLS=5 居中裁剪回墙壁，缝隙不再过大（L1 由 12 格→5 格，入射容差 ±24°→±9°）。<br>
+      ⑲ 形状垂直居中（v7 需求②）：关卡装载时按内容行包围盒在方块容器内垂直居中（recenterMap），底部墙壁行固定不动，解决原设计「偏上」。<br>
+      ⑳ 道具方块统一底色（v7 需求③）：所有道具方块背景与普通方块一致（蓝紫渐变），仅靠图标区分——分裂=两白点、三分裂=三白点、爆炸=橙色炸弹、生命=白色爱心、挡板=绿色实心横条、快速=白色双箭头、隐形=白色幽灵。<br>
+      ㉑ 墙壁纯色（v7 需求⑤）：不可消除墙壁改为纯背景色填充，去掉原两个铆钉白点。
+    </p>
+  </div>
+</div>
+
+<!-- 素材层：清单 + 加载器。必须早于 prototype-main.js，因为 Sfx 初始化时要读 global.TTAudio。
+     素材未投放时，位图只发一条哨兵请求即停止，音频直接回退程序合成，控制台不会刷屏 404。 -->
+<script src="js/assets-manifest.js"></script>
+<script src="js/assets-loader.js"></script>
+<script>TTAssets.preload({ root: '../' });</script>
+
+<script src="js/prototype-data.js"></script>
+<script src="js/prototype-core.js"></script>
+<script src="js/prototype-render.js"></script>
+<script src="js/prototype-main.js"></script>
+</body>
+</html>
