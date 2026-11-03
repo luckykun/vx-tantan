@@ -28,8 +28,8 @@ import { LEVELS_300 } from './levels';
     H: 667,               // 逻辑高
 
     PAD: 12,              // 竞技区左右留白
-    COLS: 24,             // 网格列数（v10.3：30→24，方块更大更醒目）
-    ROWS: 20,             // 网格行数（v10.23：22→20，最底一行 = 底部墙壁行 + 缺口）
+    COLS: 26,             // 网格列数（v10.33：24→26，格子更细、画面更精细）
+    ROWS: 22,             // 网格行数（v10.33：20→22，抵消格宽缩小使方框高度基本不变；最底一行 = 底部墙壁行 + 缺口）
 
     HUD_H: 78,            // 顶部信息栏高度（v10.1：进度条独占卡片底行）
     HUD_TOP: 96,          // v10.10：HUD 卡片顶边（= 胶囊底+28，启动时按 insets 重算）
@@ -72,13 +72,13 @@ import { LEVELS_300 } from './levels';
     DIAMOND_START: 0      // 钱包初始钻石（存档缺失时；实际数量持久化于 localStorage）
   };
 
-  CFG.CELL = (CFG.W - CFG.PAD * 2) / CFG.COLS;   // v10.3：24 列 → 14.625
+  CFG.CELL = (CFG.W - CFG.PAD * 2) / CFG.COLS;   // v10.33：26 列 → 13.5
   CFG.BALL_R = CFG.CELL / 2 - 0.75;              // v10.5：球径 = 方块视觉尺寸（满格-1.5 留缝）
   CFG.ARENA_W = CFG.CELL * CFG.COLS;             // 351
-  CFG.ARENA_H = CFG.CELL * CFG.ROWS;             // 257.4
+  CFG.ARENA_H = CFG.CELL * CFG.ROWS;             // 297
   CFG.ARENA_LEFT = CFG.PAD;                      // 12
   CFG.ARENA_RIGHT = CFG.PAD + CFG.ARENA_W;       // 363
-  CFG.ARENA_BOTTOM = CFG.ARENA_TOP + CFG.ARENA_H;// 337.4
+  CFG.ARENA_BOTTOM = CFG.ARENA_TOP + CFG.ARENA_H;// 411（启动时按 insets 重算）
   CFG.PADDLE_W = Math.round(CFG.ARENA_W * 0.45); // v10.16：挡板默认宽 = 大方框宽度的 45%
 
   /* ------------------------------------------------------------------ *

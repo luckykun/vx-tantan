@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-v10.28 关卡生成器：产出 src/core/levels.ts（300 关，内容区 19 行 × 24 列 = 456 格）。
+v10.29 关卡生成器：产出 src/core/levels.ts（300 关，内容区 21 行 × 26 列 = 546 格）。
 规格（用户拍板）：
-  - 每关方块总数（含墙体与道具）∈ [182, 456]（40%~100%）；
+  - 每关方块总数（含墙体与道具）∈ [218, 546]（40%~100%）；
   - 墙体 W 占总数 0%~15%；
   - 道具占总数 5%~10%；道具类型比例 分裂T:生命L:墙隐G:挡板P = 5:2:1:2；
   - 道具分布：挡板偏外层，其余随机；成对时左右对称；整体分散（切比雪夫距离≥3）；
@@ -535,13 +535,13 @@ def build_level(idx):
     elif easy:
         name, tf = TEMPLATES[rng.randrange(len(TEMPLATES))]
         n = rng.randint(15, 19)
-        target = rng.randint(205, 250) + int(r * 40)   # 下限留余量（通道/清理损耗）
+        target = rng.randint(245, 299) + int(r * 48)   # 下限留余量（通道/清理损耗）
         wall_frac = rng.uniform(0.0, 0.05)
         prop_frac = rng.uniform(0.05, 0.07)
     else:
         name, tf = TEMPLATES[rng.randrange(len(TEMPLATES))]
         n = rng.randint(17, 19)
-        target = min(456, rng.randint(300, 360) + int(r * 96))
+        target = min(546, rng.randint(359, 431) + int(r * 115))
         wall_frac = rng.uniform(0.08, 0.15)
         prop_frac = rng.uniform(0.07, 0.10)
 
@@ -574,9 +574,9 @@ def build_level(idx):
         for _ in range(4):
             cleanup_isolated(grid)
             cur = count_cells(grid) + sum(1 for rr in range(CONTENT) for cc in range(COLS) if grid[rr][cc] == 'W')
-            if cur >= 186:
+            if cur >= 223:
                 break
-            adjust_count(grid, count_cells(grid) + (192 - cur), avoid=channel)
+            adjust_count(grid, count_cells(grid) + (230 - cur), avoid=channel)
     else:
         cleanup_isolated(grid)
 

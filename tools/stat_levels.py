@@ -28,24 +28,24 @@ tp = tt = 0
 p_outer = p_all = 0
 diffs = []
 for (lid, name), rws in levels:
-    body = ''.join(rws[:19])
+    body = ''.join(rws[:CONTENT])
     nw = body.count('W')
     npr = sum(body.count(t) for t in 'TLPG')
     total = body.count('B') + nw + npr
     diffs.append(total)
-    for r in range(19):
-        for c in range(24):
+    for r in range(CONTENT):
+        for c in range(COLS):
             t = rws[r][c]
             if t in 'TLPG':
                 tt += 1
-                if rws[r][23 - c] == t:
+                if rws[r][COLS - 1 - c] == t:
                     tp += 1
                 if t == 'P':
                     p_all += 1
                     nb = 0
                     for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
                         rr, cc = r + dr, c + dc
-                        if 0 <= rr < 19 and 0 <= cc < 24 and rws[rr][cc] == 'B':
+                        if 0 <= rr < CONTENT and 0 <= cc < COLS and rws[rr][cc] == 'B':
                             nb += 1
                     if nb < 4:
                         p_outer += 1

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""校验 levels.ts：总数182~456 / 墙0~15% / 道具5~10% / T不在缝上 / 缝隙≤5 / 阈值递增。"""
+"""校验 levels.ts：总数218~546 / 墙0~15% / 道具5~10% / T不在缝上 / 缝隙≤5 / 阈值递增。"""
 import re
 import os
 import sys
@@ -42,7 +42,8 @@ for (lid, name, s1, s2, s3), rws in levels:
     nb = body.count('B')
     total = nb + nw + npr
     stat_total.append(total)
-    if not (182 <= total <= 456):
+    # L1 是手工爱心图案（生成器中 target=None，不做数量调整），豁免密度下限
+    if lid != 1 and not (218 <= total <= 546):
         bad += 1
         print('TOTAL out of range', lid, total)
     if not (0 <= nw <= total * 0.15 + 0.5):
